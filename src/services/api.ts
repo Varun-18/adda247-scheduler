@@ -17,6 +17,52 @@ export interface ApiResponse<T> {
   statusCode: number;
 }
 
+// Add these new interfaces above your ApiService class
+
+export interface FacultyLecture {
+  batchName: string;
+  subjectName: string;
+  lectureTitle: string;
+  batchId: string;
+  subjectId: string;
+  topicId: string;
+  lectureId: string;
+  topicName: string;
+}
+
+export interface FacultySubject {
+  _id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  subjects: {
+    _id: string;
+    subjectId: string;
+    title: string;
+    facultyId: string;
+    totalLectures: number;
+    topics: {
+      _id: string;
+      topicId: string;
+      title: string;
+      facultyId: string;
+      lectures: {
+        _id: string;
+        lectureId: string;
+        title: string;
+        facultyId: string;
+      }[];
+    }[];
+  }[];
+}
+
+export interface MarkLectureCompletedPayload {
+  batchId: string;
+  subjectId: string;
+  topicId: string;
+  lectureId: string;
+}
+
 export interface PaginationParams {
   page?: number;
   limit?: number;
@@ -417,6 +463,24 @@ class ApiService {
 
   async getBatches(): Promise<ApiResponse<Batch[]>> {
     return this.request<Batch[]>("/batch/list");
+  }
+
+  // Faculty APIs
+  async getFacultyLectures(): Promise<ApiResponse<FacultyLecture[]>> {
+    return this.request<FacultyLecture[]>("/batch/get/lectures");
+  }
+
+  async getFacultySubjects(): Promise<ApiResponse<FacultySubject[]>> {
+    return this.request<FacultySubject[]>("/batch/get/subjects");
+  }
+
+  async markLectureCompleted(
+    payload: MarkLectureCompletedPayload
+  ): Promise<ApiResponse<any>> {
+    return this.request<any>("/batch/complete/lecture", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   }
 }
 

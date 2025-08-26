@@ -1,340 +1,243 @@
-import React, { useState } from 'react';
-import { Calendar, Clock, CheckCircle, AlertCircle, Plus } from 'lucide-react';
-
-interface LectureAssignment {
-  id: string;
-  subject: string;
-  batch: string;
-  totalLectures: number;
-  completedLectures: number;
-  remainingLectures: number;
-  lastLectureDate?: string;
-}
-
-interface LectureRecord {
-  id: string;
-  subject: string;
-  batch: string;
-  date: string;
-  duration: number;
-  status: 'completed' | 'missed';
-  notes?: string;
-}
+import React, { useState } from "react";
+import {
+  Calendar,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Plus,
+  BookOpen,
+  Users,
+  Target,
+} from "lucide-react";
+import { apiService, FacultyLecture } from "../../services/api";
 
 const MyLectures: React.FC = () => {
-  const [showMarkLectureModal, setShowMarkLectureModal] = useState(false);
-  const [selectedAssignment, setSelectedAssignment] = useState<LectureAssignment | null>(null);
+  const [lectures, setLectures] = useState<FacultyLecture[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [completingLecture, setCompletingLecture] = useState<string | null>(
+    null
+  );
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Mock data for teacher's lecture assignments
-  const lectureAssignments: LectureAssignment[] = [
-    {
-      id: '1',
-      subject: 'Mathematics',
-      batch: 'Math Batch A',
-      totalLectures: 80,
-      completedLectures: 45,
-      remainingLectures: 35,
-      lastLectureDate: '2024-01-25'
-    },
-    {
-      id: '2',
-      subject: 'Physics',
-      batch: 'Physics Batch B',
-      totalLectures: 60,
-      completedLectures: 20,
-      remainingLectures: 40,
-      lastLectureDate: '2024-01-24'
-    },
-    {
-      id: '3',
-      subject: 'Chemistry',
-      batch: 'Chemistry Batch C',
-      totalLectures: 70,
-      completedLectures: 55,
-      remainingLectures: 15,
-      lastLectureDate: '2024-01-26'
+  React.useEffect(() => {
+    fetchFacultyLectures();
+  }, []);
+
+  const fetchFacultyLectures = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getFacultyLectures();
+      if (response.success) {
+        setLectures(response.data);
+      }
+    } catch (error) {
+      setError("Failed to fetch your lectures");
+      console.error("Error fetching faculty lectures:", error);
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  // Mock data for recent lecture records
-  const recentLectures: LectureRecord[] = [
-    {
-      id: '1',
-      subject: 'Mathematics',
-      batch: 'Math Batch A',
-      date: '2024-01-26',
-      duration: 60,
-      status: 'completed',
-      notes: 'Covered linear algebra fundamentals'
-    },
-    {
-      id: '2',
-      subject: 'Chemistry',
-      batch: 'Chemistry Batch C',
-      date: '2024-01-26',
-      duration: 45,
-      status: 'completed',
-      notes: 'Laboratory practical session'
-    },
-    {
-      id: '3',
-      subject: 'Physics',
-      batch: 'Physics Batch B',
-      date: '2024-01-25',
-      duration: 60,
-      status: 'completed',
-      notes: 'Thermodynamics concepts'
-    },
-    {
-      id: '4',
-      subject: 'Mathematics',
-      batch: 'Math Batch A',
-      date: '2024-01-24',
-      duration: 0,
-      status: 'missed',
-      notes: 'Class cancelled due to technical issues'
-    }
-  ];
-
-  const handleMarkLecture = (assignment: LectureAssignment) => {
-    setSelectedAssignment(assignment);
-    setShowMarkLectureModal(true);
   };
 
-  const submitLectureRecord = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real app, this would make an API call
-    console.log('Marking lecture as taken for:', selectedAssignment);
-    setShowMarkLectureModal(false);
-    setSelectedAssignment(null);
+  const handleMarkLectureCompleted = async (lecture: FacultyLecture) => {
+    try {
+      setCompletingLecture(lecture.lectureId);
+      const response = await apiService.markLectureCompleted({
+        batchId: lecture.batchId,
+        subjectId: lecture.subjectId,
+        topicId: lecture.topicId,
+        lectureId: lecture.lectureId,
+      });
+
+      if (response.success) {
+        // Remove the completed lecture from the list
+        setLectures((prev) =>
+          prev.filter((l) => l.lectureId !== lecture.lectureId)
+        );
+      }
+    } catch (error) {
+      console.error("Error marking lecture as completed:", error);
+      setError("Failed to mark lecture as completed");
+    } finally {
+      setCompletingLecture(null);
+    }
   };
+
+  const filteredLectures = lectures.filter(
+    (lecture) =>
+      lecture.lectureTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lecture.subjectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lecture.batchName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lecture.topicName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Group lectures by batch for better organization
+  const lecturesByBatch = filteredLectures.reduce((acc, lecture) => {
+    if (!acc[lecture.batchName]) {
+      acc[lecture.batchName] = [];
+    }
+    acc[lecture.batchName].push(lecture);
+    return acc;
+  }, {} as Record<string, FacultyLecture[]>);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">My Lectures</h1>
-        <p className="text-gray-600">Track your lecture assignments and mark daily attendance</p>
+        <p className="text-gray-600">View and manage your pending lectures</p>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Clock className="w-6 h-6 text-blue-600" />
+            <div className="p-3 bg-red-100 rounded-lg">
+              <Target className="w-6 h-6 text-red-600" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-900">210</h3>
-              <p className="text-sm text-gray-600">Total Lectures</p>
+              <h3 className="text-2xl font-bold text-gray-900">
+                {lectures.length}
+              </h3>
+              <p className="text-sm text-gray-600">Pending Lectures</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <BookOpen className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">
+                {Object.keys(lecturesByBatch).length}
+              </h3>
+              <p className="text-sm text-gray-600">Active Batches</p>
             </div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center space-x-3">
             <div className="p-3 bg-green-100 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+              <Users className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-900">120</h3>
-              <p className="text-sm text-gray-600">Completed</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center space-x-3">
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <AlertCircle className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900">90</h3>
-              <p className="text-sm text-gray-600">Remaining</p>
+              <h3 className="text-2xl font-bold text-gray-900">
+                {[...new Set(lectures.map((l) => l.subjectName))].length}
+              </h3>
+              <p className="text-sm text-gray-600">Subjects</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Lecture Assignments */}
+      {/* Search */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Lecture Assignments</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Search Lectures
+          </h2>
         </div>
         <div className="p-6">
-          <div className="space-y-4">
-            {lectureAssignments.map((assignment) => {
-              const progress = (assignment.completedLectures / assignment.totalLectures) * 100;
-              return (
-                <div key={assignment.id} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">{assignment.subject}</h3>
-                      <p className="text-sm text-gray-600">{assignment.batch}</p>
-                    </div>
-                    <button
-                      onClick={() => handleMarkLecture(assignment)}
-                      className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Mark Taken Today</span>
-                    </button>
-                  </div>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by lecture title, subject, batch, or topic..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+      </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="text-center p-3 bg-gray-50 rounded-lg">
-                      <p className="text-2xl font-bold text-gray-900">{assignment.totalLectures}</p>
-                      <p className="text-sm text-gray-600">Total Assigned</p>
-                    </div>
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <p className="text-2xl font-bold text-green-600">{assignment.completedLectures}</p>
-                      <p className="text-sm text-gray-600">Completed</p>
-                    </div>
-                    <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                      <p className="text-2xl font-bold text-yellow-600">{assignment.remainingLectures}</p>
-                      <p className="text-sm text-gray-600">Remaining</p>
-                    </div>
-                  </div>
+      {loading && (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+          <p className="mt-2 text-gray-600">Loading your lectures...</p>
+        </div>
+      )}
 
-                  <div className="mb-3">
-                    <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-gray-600">Progress</span>
-                      <span className="font-medium text-gray-900">{Math.round(progress)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-red-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {assignment.lastLectureDate && (
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span>Last lecture:</span>
-                      <span>{new Date(assignment.lastLectureDate).toLocaleDateString()}</span>
-                    </div>
-                  )}
+      {/* Lectures by Batch */}
+      {Object.keys(lecturesByBatch).length > 0 ? (
+        <div className="space-y-6">
+          {Object.entries(lecturesByBatch).map(([batchName, batchLectures]) => (
+            <div
+              key={batchName}
+              className="bg-white rounded-lg shadow-sm border border-gray-200"
+            >
+              <div className="px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {batchName}
+                  </h2>
+                  <span className="text-sm text-gray-600">
+                    {batchLectures.length} pending lecture
+                    {batchLectures.length !== 1 ? "s" : ""}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {batchLectures.map((lecture) => (
+                    <div
+                      key={`${lecture.batchId}-${lecture.lectureId}`}
+                      className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
+                    >
+                      <div className="mb-3">
+                        <h3 className="font-medium text-gray-900 mb-1">
+                          {lecture.lectureTitle}
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-1">
+                          {lecture.subjectName}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Topic: {lecture.topicName}
+                        </p>
+                      </div>
 
-      {/* Recent Lectures */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Lecture History</h2>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-gray-500">
+                          Ready to deliver
+                        </div>
+                        <button
+                          onClick={() => handleMarkLectureCompleted(lecture)}
+                          disabled={completingLecture === lecture.lectureId}
+                          className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {completingLecture === lecture.lectureId
+                            ? "Marking..."
+                            : "Mark Complete"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="p-6">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b border-gray-200">
-                <tr>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Subject</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Batch</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Date</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Duration</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-700">Notes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {recentLectures.map((lecture) => (
-                  <tr key={lecture.id} className="hover:bg-gray-50">
-                    <td className="py-3 px-4 font-medium text-gray-900">{lecture.subject}</td>
-                    <td className="py-3 px-4 text-gray-600">{lecture.batch}</td>
-                    <td className="py-3 px-4 text-gray-600">
-                      {new Date(lecture.date).toLocaleDateString()}
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">{lecture.duration} min</td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        lecture.status === 'completed' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {lecture.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600 text-sm max-w-xs truncate">
-                      {lecture.notes}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      ) : (
+        !loading && (
+          <div className="text-center py-12">
+            <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {searchTerm
+                ? "No matching lectures found"
+                : "All lectures completed!"}
+            </h3>
+            <p className="text-gray-600">
+              {searchTerm
+                ? "Try adjusting your search terms to find lectures."
+                : "You have completed all your assigned lectures. Great work!"}
+            </p>
           </div>
-        </div>
-      </div>
-
-      {/* Mark Lecture Modal */}
-      {showMarkLectureModal && selectedAssignment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Mark Lecture as Taken</h2>
-            <form onSubmit={submitLectureRecord} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-                <input
-                  type="text"
-                  value={selectedAssignment.subject}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Batch</label>
-                <input
-                  type="text"
-                  value={selectedAssignment.batch}
-                  disabled
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                <input
-                  type="date"
-                  defaultValue={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Duration (minutes)</label>
-                <input
-                  type="number"
-                  placeholder="60"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Notes (optional)</label>
-                <textarea
-                  rows={3}
-                  placeholder="Add any notes about today's lecture..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                />
-              </div>
-              <div className="flex items-center space-x-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Mark as Taken
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMarkLectureModal(false);
-                    setSelectedAssignment(null);
-                  }}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        )
       )}
     </div>
   );
