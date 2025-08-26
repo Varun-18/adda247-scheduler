@@ -7,8 +7,6 @@ import {
   CheckCircle,
   Circle,
   Play,
-  Calendar,
-  Target,
 } from "lucide-react";
 import { apiService, FacultyBatch } from "../../services/api";
 
@@ -65,9 +63,7 @@ const MyCourses: React.FC = () => {
       });
 
       if (response.success) {
-        // Refresh the data
         fetchFacultySubjects();
-        // Show success message or notification here if needed
       }
     } catch (error) {
       console.error("Error marking lecture as completed:", error);
@@ -75,6 +71,29 @@ const MyCourses: React.FC = () => {
     } finally {
       setCompletingLecture(null);
     }
+  };
+
+  const calculateProgress = (batch: FacultyBatch) => {
+    const totalLectures = batch.subjects.reduce(
+      (acc, subject) => acc + subject.totalLectures,
+      0
+    );
+    const completedLectures = batch.subjects.reduce(
+      (acc, subject) =>
+        acc +
+        subject.topics.reduce(
+          (topicAcc, topic) =>
+            topicAcc +
+            topic.lectures.filter(
+              (lecture) => lecture.completedAt && lecture.completedBy
+            ).length,
+          0
+        ),
+      0
+    );
+    return totalLectures > 0
+      ? Math.round((completedLectures / totalLectures) * 100)
+      : 0;
   };
 
   if (selectedBatch) {
@@ -101,119 +120,13 @@ const MyCourses: React.FC = () => {
               <div className="text-right">
                 <p className="text-sm text-gray-600">Overall Progress</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {(() => {
-                    const completedLectures = selectedBatch.subjects.reduce(
-                      (acc, subject) =>
-                        acc +
-                        subject.topics.reduce(
-                          (topicAcc, topic) => topicAcc + topic.lectures.length,
-                          0
-                        ),
-                      0
-                    );
-                    const totalLectures = selectedBatch.subjects.reduce(
-                      (acc, subject) => acc + subject.totalLectures,
-                      0
-                    );
-                    return totalLectures > 0
-                      ? Math.round((completedLectures / totalLectures) * 100)
-                      : 0;
-                  })()}
-                  %
+                  {calculateProgress(selectedBatch)}%
                 </p>
               </div>
             </div>
           </div>
 
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Students</p>
-                  <p className="font-medium text-gray-900">N/A</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Duration</p>
-                  <p className="font-medium text-gray-900 text-sm">
-                    {new Date(selectedBatch.startDate).toLocaleDateString()} -{" "}
-                    {new Date(selectedBatch.endDate).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <BookOpen className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Subjects</p>
-                  <p className="font-medium text-gray-900">
-                    {selectedBatch.subjects.length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Overall Progress</span>
-                <span className="font-medium text-gray-900">
-                  {(() => {
-                    const completedLectures = selectedBatch.subjects.reduce(
-                      (acc, subject) =>
-                        acc +
-                        subject.topics.reduce(
-                          (topicAcc, topic) => topicAcc + topic.lectures.length,
-                          0
-                        ),
-                      0
-                    );
-                    const totalLectures = selectedBatch.subjects.reduce(
-                      (acc, subject) => acc + subject.totalLectures,
-                      0
-                    );
-                    return totalLectures > 0
-                      ? Math.round((completedLectures / totalLectures) * 100)
-                      : 0;
-                  })()}
-                  %
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div
-                  className="bg-red-600 h-3 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${(() => {
-                      const completedLectures = selectedBatch.subjects.reduce(
-                        (acc, subject) =>
-                          acc +
-                          subject.topics.reduce(
-                            (topicAcc, topic) =>
-                              topicAcc + topic.lectures.length,
-                            0
-                          ),
-                        0
-                      );
-                      const totalLectures = selectedBatch.subjects.reduce(
-                        (acc, subject) => acc + subject.totalLectures,
-                        0
-                      );
-                      return totalLectures > 0
-                        ? Math.round((completedLectures / totalLectures) * 100)
-                        : 0;
-                    })()}%`,
-                  }}
-                ></div>
-              </div>
-            </div>
-
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Subjects & Topics
             </h2>
@@ -238,23 +151,51 @@ const MyCourses: React.FC = () => {
                         </h4>
 
                         <div className="space-y-2 ml-4">
-                          {topic.lectures.map((lecture, lectureIndex) => (
-                            <div
-                              key={lecture._id}
-                              className="flex items-center justify-between p-2 bg-white rounded border"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <CheckCircle className="w-4 h-4 text-green-600" />
-                                <span className="text-sm text-gray-900">
-                                  {subjectIndex + 1}.{topicIndex + 1}.
-                                  {lectureIndex + 1} {lecture.title}
-                                </span>
-                                <span className="text-xs text-gray-500 bg-green-100 px-2 py-1 rounded-full">
-                                  Completed
-                                </span>
+                          {topic.lectures.map((lecture, lectureIndex) => {
+                            const isCompleted =
+                              lecture.completedAt && lecture.completedBy;
+                            return (
+                              <div
+                                key={lecture._id}
+                                className="flex items-center justify-between p-2 bg-white rounded border"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  {isCompleted ? (
+                                    <CheckCircle className="w-4 h-4 text-green-600" />
+                                  ) : (
+                                    <Circle className="w-4 h-4 text-gray-400" />
+                                  )}
+                                  <span className="text-sm text-gray-900">
+                                    {subjectIndex + 1}.{topicIndex + 1}.
+                                    {lectureIndex + 1} {lecture.title}
+                                  </span>
+                                  {isCompleted && (
+                                    <span className="text-xs text-gray-500 bg-green-100 px-2 py-1 rounded-full">
+                                      Completed
+                                    </span>
+                                  )}
+                                </div>
+                                {!isCompleted && (
+                                  <button
+                                    onClick={() =>
+                                      handleMarkLectureCompleted(
+                                        selectedBatch._id,
+                                        subject._id,
+                                        topic._id,
+                                        lecture._id
+                                      )
+                                    }
+                                    disabled={completingLecture === lecture._id}
+                                    className="text-xs text-red-600 hover:text-red-800 font-medium"
+                                  >
+                                    {completingLecture === lecture._id
+                                      ? "Marking..."
+                                      : "Mark as Completed"}
+                                  </button>
+                                )}
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
@@ -283,7 +224,6 @@ const MyCourses: React.FC = () => {
         </div>
       )}
 
-      {/* Search */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -304,37 +244,9 @@ const MyCourses: React.FC = () => {
         </div>
       )}
 
-      {/* Courses Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredBatches.map((batch) => {
-          const totalLectures = batch.subjects.reduce(
-            (acc, subject) => acc + subject.totalLectures,
-            0
-          );
-          const completedLectures = batch.subjects.reduce(
-            (acc, subject) =>
-              acc +
-              subject.topics.reduce(
-                (topicAcc, topic) => topicAcc + topic.lectures.length,
-                0
-              ),
-            0
-          );
-          const progress =
-            totalLectures > 0
-              ? Math.round((completedLectures / totalLectures) * 100)
-              : 0;
-
-          const getDaysRemaining = (endDate: string) => {
-            const today = new Date();
-            const end = new Date(endDate);
-            const timeDiff = end.getTime() - today.getTime();
-            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-            return daysDiff;
-          };
-
-          const daysRemaining = getDaysRemaining(batch.endDate);
-
+          const progress = calculateProgress(batch);
           return (
             <div
               key={batch._id}
@@ -350,55 +262,9 @@ const MyCourses: React.FC = () => {
                       Duration: {new Date(batch.startDate).toLocaleDateString()}{" "}
                       - {new Date(batch.endDate).toLocaleDateString()}
                     </p>
-                    <div className="flex items-center space-x-2 text-sm">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                        {batch.subjects.length} subjects
-                      </span>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs ${
-                          daysRemaining <= 0
-                            ? "bg-red-100 text-red-800"
-                            : daysRemaining <= 7
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {daysRemaining <= 0
-                          ? "Expired"
-                          : `${daysRemaining} days left`}
-                      </span>
-                    </div>
                   </div>
                 </div>
 
-                {/* Course Stats */}
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
-                      <BookOpen className="w-4 h-4" />
-                      <span>{batch.subjects.length}</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">Subjects</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
-                      <Clock className="w-4 h-4" />
-                      <span>{totalLectures}</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">Total Lectures</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-1 text-sm text-gray-600">
-                      <CheckCircle className="w-4 h-4" />
-                      <span>
-                        {completedLectures}/{totalLectures}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">Completed</p>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
                 <div className="mb-4">
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="text-gray-600">Progress</span>
@@ -411,37 +277,6 @@ const MyCourses: React.FC = () => {
                       className="bg-red-600 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${progress}%` }}
                     ></div>
-                  </div>
-                </div>
-
-                {/* Subjects Preview */}
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">
-                    Subjects
-                  </h4>
-                  <div className="space-y-1">
-                    {batch.subjects.slice(0, 3).map((subject) => (
-                      <div
-                        key={subject._id}
-                        className="flex items-center space-x-2 text-sm"
-                      >
-                        <BookOpen className="w-4 h-4 text-blue-600" />
-                        <span className="text-gray-900">{subject.title}</span>
-                        <span className="text-xs text-gray-500">
-                          (
-                          {subject.topics.reduce(
-                            (acc, topic) => acc + topic.lectures.length,
-                            0
-                          )}
-                          /{subject.totalLectures} completed)
-                        </span>
-                      </div>
-                    ))}
-                    {batch.subjects.length > 3 && (
-                      <p className="text-xs text-gray-500 ml-6">
-                        +{batch.subjects.length - 3} more subjects
-                      </p>
-                    )}
                   </div>
                 </div>
 
@@ -463,7 +298,6 @@ const MyCourses: React.FC = () => {
         })}
       </div>
 
-      {/* Empty State */}
       {!loading && filteredBatches.length === 0 && (
         <div className="text-center py-12">
           <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
