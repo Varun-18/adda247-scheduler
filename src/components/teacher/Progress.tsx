@@ -1,5 +1,6 @@
 import React from 'react';
 import { TrendingUp, BookOpen, Clock, Target, Calendar, Award } from 'lucide-react';
+import { showToast } from '../../utils/toast';
 
 const Progress: React.FC = () => {
   // Mock progress data
@@ -11,9 +12,7 @@ const Progress: React.FC = () => {
       completedTopics: 15,
       progress: 75,
       totalLectures: 80,
-      completedLectures: 45,
-      students: 25,
-      avgScore: 85
+      completedLectures: 45
     },
     {
       course: 'Basic Physics',
@@ -22,9 +21,7 @@ const Progress: React.FC = () => {
       completedTopics: 12,
       progress: 60,
       totalLectures: 60,
-      completedLectures: 20,
-      students: 20,
-      avgScore: 78
+      completedLectures: 20
     },
     {
       course: 'Applied Chemistry',
@@ -33,9 +30,7 @@ const Progress: React.FC = () => {
       completedTopics: 18,
       progress: 90,
       totalLectures: 70,
-      completedLectures: 55,
-      students: 15,
-      avgScore: 92
+      completedLectures: 55
     }
   ];
 
@@ -49,7 +44,7 @@ const Progress: React.FC = () => {
   const achievements = [
     {
       title: 'High Completion Rate',
-      description: 'Achieved 90% topic completion in Chemistry',
+      description: 'Achieved 90% lecture completion in Chemistry',
       date: '2024-01-20',
       icon: Award,
       color: 'text-yellow-600 bg-yellow-100'
@@ -63,7 +58,7 @@ const Progress: React.FC = () => {
     },
     {
       title: 'Student Excellence',
-      description: 'Students achieved 92% average score',
+      description: 'Excellent teaching performance maintained',
       date: '2024-01-10',
       icon: TrendingUp,
       color: 'text-blue-600 bg-blue-100'
@@ -155,7 +150,7 @@ const Progress: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div className="text-center p-3 bg-blue-50 rounded-lg">
                     <p className="text-xl font-bold text-blue-600">{course.completedTopics}/{course.totalTopics}</p>
                     <p className="text-sm text-gray-600">Topics Done</p>
@@ -163,14 +158,6 @@ const Progress: React.FC = () => {
                   <div className="text-center p-3 bg-green-50 rounded-lg">
                     <p className="text-xl font-bold text-green-600">{course.completedLectures}/{course.totalLectures}</p>
                     <p className="text-sm text-gray-600">Lectures</p>
-                  </div>
-                  <div className="text-center p-3 bg-purple-50 rounded-lg">
-                    <p className="text-xl font-bold text-purple-600">{course.students}</p>
-                    <p className="text-sm text-gray-600">Students</p>
-                  </div>
-                  <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                    <p className="text-xl font-bold text-yellow-600">{course.avgScore}%</p>
-                    <p className="text-sm text-gray-600">Avg Score</p>
                   </div>
                 </div>
 
@@ -253,7 +240,7 @@ const Progress: React.FC = () => {
       {/* Performance Insights */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Performance Insights</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Teaching Insights</h2>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -263,11 +250,11 @@ const Progress: React.FC = () => {
             </div>
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-3xl font-bold text-blue-600 mb-2">Consistent</div>
-              <p className="text-sm text-gray-600">Regular lecture attendance maintained</p>
+              <p className="text-sm text-gray-600">Regular lecture schedule maintained</p>
             </div>
             <div className="text-center p-4 bg-yellow-50 rounded-lg">
               <div className="text-3xl font-bold text-yellow-600 mb-2">Improving</div>
-              <p className="text-sm text-gray-600">Student scores showing upward trend</p>
+              <p className="text-sm text-gray-600">Teaching efficiency showing upward trend</p>
             </div>
           </div>
         </div>
