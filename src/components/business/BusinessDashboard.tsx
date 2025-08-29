@@ -5,7 +5,6 @@ import TeacherManagement from './TeacherManagement';
 import CourseManagement from './CourseManagement';
 import BatchManagement from './BatchManagement';
 import LectureTracking from './LectureTracking';
-import Analytics from './Analytics';
 
 const BusinessDashboard: React.FC = () => {
   const location = useLocation();
@@ -16,7 +15,6 @@ const BusinessDashboard: React.FC = () => {
     if (path === '/courses') return 'courses';
     if (path === '/batches') return 'batches';
     if (path === '/lectures') return 'lectures';
-    if (path === '/analytics') return 'analytics';
     return 'dashboard';
   };
 
@@ -34,8 +32,6 @@ const BusinessDashboard: React.FC = () => {
         return <BatchManagement />;
       case 'lectures':
         return <LectureTracking />;
-      case 'analytics':
-        return <Analytics />;
       default:
         return <DashboardOverview />;
     }

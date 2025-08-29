@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   apiService,
   Course,
@@ -18,13 +19,12 @@ import {
   UpdateCoursePayload,
   PaginationParams,
 } from "../../services/api";
-
-import CourseDetails from "./CourseDetails";
+import { showToast, handleApiError } from "../../utils/toast";
 
 const CourseManagement: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,9 +83,11 @@ const CourseManagement: React.FC = () => {
           setTotalPages(response.pagination.totalPages);
           setTotalItems(response.pagination.totalItems);
         }
+      } else {
+        showToast.error('Failed to fetch courses');
       }
     } catch (error) {
-      setError("Failed to fetch courses");
+      handleApiError(error, 'Failed to fetch courses');
       console.error("Error fetching courses:", error);
     } finally {
       setLoading(false);
@@ -109,6 +111,7 @@ const CourseManagement: React.FC = () => {
 
       const response = await apiService.createCourse(payload);
       if (response.success) {
+        showToast.success('Course created successfully');
         setShowAddModal(false);
         setFormData({
           title: "",
@@ -119,9 +122,11 @@ const CourseManagement: React.FC = () => {
           status: "active",
         });
         fetchCourses(); // Refresh the list
+      } else {
+        showToast.error('Failed to create course');
       }
     } catch (error) {
-      setError("Failed to create course");
+      handleApiError(error, 'Failed to create course');
       console.error("Error creating course:", error);
     } finally {
       setLoading(false);
@@ -161,6 +166,7 @@ const CourseManagement: React.FC = () => {
 
       const response = await apiService.updateCourse(payload);
       if (response.success) {
+        showToast.success('Course updated successfully');
         setShowAddModal(false);
         setEditingCourse(null);
         setFormData({
@@ -172,9 +178,11 @@ const CourseManagement: React.FC = () => {
           status: "active",
         });
         fetchCourses(); // Refresh the list
+      } else {
+        showToast.error('Failed to update course');
       }
     } catch (error) {
-      setError("Failed to update course");
+      handleApiError(error, 'Failed to update course');
       console.error("Error updating course:", error);
     } finally {
       setLoading(false);
@@ -224,16 +232,6 @@ const CourseManagement: React.FC = () => {
         return "bg-gray-100 text-gray-800";
     }
   };
-
-  if (selectedCourse) {
-    return (
-      <CourseDetails
-        course={selectedCourse}
-        onBack={() => setSelectedCourse(null)}
-        onUpdate={fetchCourses}
-      />
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -448,7 +446,7 @@ const CourseManagement: React.FC = () => {
                   Created {new Date(course.createdAt).toLocaleDateString()}
                 </span>
                 <button
-                  onClick={() => setSelectedCourse(course)}
+                  onClick={() => navigate(`/courses/${course._id}`)}
                   className="flex items-center space-x-1 text-sm text-red-600 hover:text-red-800 font-medium"
                 >
                   <Eye className="w-4 h-4" />

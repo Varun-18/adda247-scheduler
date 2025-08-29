@@ -7,8 +7,11 @@ import {
   Mail,
   Phone,
   BookOpen,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import { apiService, User, CreateUserPayload } from "../../services/api";
+import { apiService, User, CreateUserPayload, PaginationParams } from "../../services/api";
+import { showToast, handleApiError } from "../../utils/toast";
 
 const TeacherManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -16,6 +19,15 @@ const TeacherManagement: React.FC = () => {
   const [teachers, setTeachers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [statusFilter, setStatusFilter] = useState("");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -34,21 +46,47 @@ const TeacherManagement: React.FC = () => {
 
   React.useEffect(() => {
     fetchTeachers();
-  }, []);
+  }, [currentPage, itemsPerPage, sortBy, sortOrder, searchTerm, statusFilter]);
+
+  // Add debounced search effect
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage !== 1) {
+        setCurrentPage(1); // Reset to first page when search/filter changes
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, statusFilter]);
 
   const fetchTeachers = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getAllUsers();
+      const paginationParams: PaginationParams = {
+        page: currentPage,
+        limit: itemsPerPage,
+        sortBy,
+        sortOrder,
+        ...(searchTerm && { search: searchTerm }),
+        ...(statusFilter && { status: statusFilter }),
+      };
+
+      const response = await apiService.getAllUsers(paginationParams);
       if (response.success) {
         // Filter only faculty users
         const facultyUsers = response.data.filter(
           (user) => user.role === "faculty"
         );
         setTeachers(facultyUsers);
+        if (response.pagination) {
+          setTotalPages(response.pagination.totalPages);
+          setTotalItems(response.pagination.totalItems);
+        }
+      } else {
+        showToast.error('Failed to fetch teachers');
       }
     } catch (error) {
-      setError("Failed to fetch teachers");
+      handleApiError(error, 'Failed to fetch teachers');
       console.error("Error fetching teachers:", error);
     } finally {
       setLoading(false);
@@ -79,6 +117,7 @@ const TeacherManagement: React.FC = () => {
 
       const response = await apiService.createUser(payload);
       if (response.success) {
+        showToast.success('Teacher created successfully');
         setShowAddModal(false);
         setFormData({
           firstName: "",
@@ -94,25 +133,25 @@ const TeacherManagement: React.FC = () => {
           joiningDate: "",
         });
         fetchTeachers(); // Refresh the list
+      } else {
+        showToast.error('Failed to create teacher');
       }
     } catch (error) {
-      setError("Failed to create teacher");
+      handleApiError(error, 'Failed to create teacher');
       console.error("Error creating teacher:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredTeachers = teachers.filter(
-    (teacher) =>
-      `${teacher.firstName} ${teacher.lastName}`
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      teacher.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (teacher.facultyProfile?.specialization || []).some((spec) =>
-        spec.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-  );
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (limit: number) => {
+    setItemsPerPage(limit);
+    setCurrentPage(1); // Reset to first page
+  };
 
   return (
     <div className="space-y-6">
@@ -136,22 +175,64 @@ const TeacherManagement: React.FC = () => {
 
       {/* Search and Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col lg:flex-row items-center space-y-4 lg:space-y-0 lg:space-x-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search teachers by name, email, or subject..."
+              placeholder="Search teachers by name, email, or specialization..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
-          <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          >
             <option value="">All Status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
+          <select
+            value={`${sortBy}-${sortOrder}`}
+            onChange={(e) => {
+              const [field, order] = e.target.value.split("-");
+              setSortBy(field);
+              setSortOrder(order as "asc" | "desc");
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          >
+            <option value="createdAt-desc">Newest First</option>
+            <option value="createdAt-asc">Oldest First</option>
+            <option value="firstName-asc">Name A-Z</option>
+            <option value="firstName-desc">Name Z-A</option>
+          </select>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          >
+            <option value={6}>6 per page</option>
+            <option value={12}>12 per page</option>
+            <option value={24}>24 per page</option>
+            <option value={48}>48 per page</option>
+          </select>
+        </div>
+
+        {/* Results Info */}
+        <div className="mt-4 text-sm text-gray-600">
+          {totalItems > 0 ? (
+            <>
+              Showing{" "}
+              {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{" "}
+              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}{" "}
+              teachers
+            </>
+          ) : (
+            "No teachers found"
+          )}
         </div>
       </div>
 
@@ -170,7 +251,7 @@ const TeacherManagement: React.FC = () => {
 
       {/* Teachers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTeachers.map((teacher) => (
+        {teachers.map((teacher) => (
           <div
             key={teacher._id}
             className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
@@ -254,6 +335,62 @@ const TeacherManagement: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Page {currentPage} of {totalPages} ({totalItems} total teachers)
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {/* Page Numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`px-3 py-1 rounded-md text-sm ${
+                      pageNum === currentPage
+                        ? "bg-red-600 text-white"
+                        : "border border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Teacher Modal */}
       {/* {showAddModal && (
@@ -651,7 +788,7 @@ const TeacherManagement: React.FC = () => {
                       <div className="relative">
                         <input
                           type="text"
-                          value={formData.specializationInput || ""}
+                          value={(formData as any).specializationInput || ""}
                           onChange={(e) =>
                             setFormData({
                               ...formData,
@@ -662,7 +799,7 @@ const TeacherManagement: React.FC = () => {
                             if (e.key === "Enter" || e.key === ",") {
                               e.preventDefault();
                               const value = (
-                                formData.specializationInput || ""
+                                (formData as any).specializationInput || ""
                               ).trim();
                               if (
                                 value &&
@@ -679,7 +816,7 @@ const TeacherManagement: React.FC = () => {
                               }
                             } else if (
                               e.key === "Backspace" &&
-                              !formData.specializationInput &&
+                              !(formData as any).specializationInput &&
                               formData.specialization.length > 0
                             ) {
                               setFormData({

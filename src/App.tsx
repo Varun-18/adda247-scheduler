@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './components/auth/LoginPage';
 import BusinessDashboard from './components/business/BusinessDashboard';
 import TeacherDashboard from './components/teacher/TeacherDashboard';
+import CourseDetails from './components/business/CourseDetails';
+import BatchDetails from './components/business/BatchDetails';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 
@@ -50,9 +53,10 @@ function AppContent() {
                   <Route path="/dashboard" element={<BusinessDashboard />} />
                   <Route path="/teachers" element={<BusinessDashboard />} />
                   <Route path="/courses" element={<BusinessDashboard />} />
+                  <Route path="/courses/:courseId" element={<CourseDetails />} />
                   <Route path="/batches" element={<BusinessDashboard />} />
+                  <Route path="/batches/:batchId" element={<BatchDetails />} />
                   <Route path="/lectures" element={<BusinessDashboard />} />
-                  <Route path="/analytics" element={<BusinessDashboard />} />
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 </>
               ) : (
@@ -69,6 +73,7 @@ function AppContent() {
           </main>
         </div>
       </div>
+      <Toaster />
     </Router>
   );
 }

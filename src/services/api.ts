@@ -30,7 +30,7 @@ export interface FacultyLecture {
   topicName: string;
 }
 
-export interface FacultySubject {
+export interface FacultyBatch {
   _id: string;
   name: string;
   startDate: string;
@@ -51,6 +51,8 @@ export interface FacultySubject {
         lectureId: string;
         title: string;
         facultyId: string;
+        completedAt?: string;
+        completedBy?: string;
       }[];
     }[];
   }[];
@@ -344,8 +346,22 @@ class ApiService {
     return this.request<User>("/user");
   }
 
-  async getAllUsers(): Promise<ApiResponse<User[]>> {
-    return this.request<User[]>("/user/list");
+  async getAllUsers(pagination?: PaginationParams): Promise<ApiResponse<User[]>> {
+    const params = new URLSearchParams();
+
+    if (pagination) {
+      if (pagination.page) params.append("page", pagination.page.toString());
+      if (pagination.limit) params.append("limit", pagination.limit.toString());
+      if (pagination.sortBy) params.append("sortBy", pagination.sortBy);
+      if (pagination.sortOrder) params.append("sortOrder", pagination.sortOrder);
+      if (pagination.search) params.append("search", pagination.search);
+      if (pagination.status) params.append("status", pagination.status);
+    }
+
+    const queryString = params.toString();
+    const endpoint = queryString ? `/user/list?${queryString}` : "/user/list";
+
+    return this.request<User[]>(endpoint);
   }
 
   async createUser(payload: CreateUserPayload): Promise<ApiResponse<User>> {
@@ -461,8 +477,22 @@ class ApiService {
     });
   }
 
-  async getBatches(): Promise<ApiResponse<Batch[]>> {
-    return this.request<Batch[]>("/batch/list");
+  async getBatches(pagination?: PaginationParams): Promise<ApiResponse<Batch[]>> {
+    const params = new URLSearchParams();
+
+    if (pagination) {
+      if (pagination.page) params.append("page", pagination.page.toString());
+      if (pagination.limit) params.append("limit", pagination.limit.toString());
+      if (pagination.sortBy) params.append("sortBy", pagination.sortBy);
+      if (pagination.sortOrder) params.append("sortOrder", pagination.sortOrder);
+      if (pagination.search) params.append("search", pagination.search);
+      if (pagination.status) params.append("status", pagination.status);
+    }
+
+    const queryString = params.toString();
+    const endpoint = queryString ? `/batch/list?${queryString}` : "/batch/list";
+
+    return this.request<Batch[]>(endpoint);
   }
 
   // Faculty APIs
@@ -470,8 +500,8 @@ class ApiService {
     return this.request<FacultyLecture[]>("/batch/get/lectures");
   }
 
-  async getFacultySubjects(): Promise<ApiResponse<FacultySubject[]>> {
-    return this.request<FacultySubject[]>("/batch/get/subjects");
+  async getFacultySubjects(): Promise<ApiResponse<FacultyBatch[]>> {
+    return this.request<FacultyBatch[]>("/batch/get/subjects");
   }
 
   async markLectureCompleted(

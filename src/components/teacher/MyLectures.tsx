@@ -10,6 +10,7 @@ import {
   Target,
 } from "lucide-react";
 import { apiService, FacultyLecture } from "../../services/api";
+import { showToast, handleApiError } from "../../utils/toast";
 
 const MyLectures: React.FC = () => {
   const [lectures, setLectures] = useState<FacultyLecture[]>([]);
@@ -30,9 +31,11 @@ const MyLectures: React.FC = () => {
       const response = await apiService.getFacultyLectures();
       if (response.success) {
         setLectures(response.data);
+      } else {
+        showToast.error('Failed to fetch your lectures');
       }
     } catch (error) {
-      setError("Failed to fetch your lectures");
+      handleApiError(error, 'Failed to fetch your lectures');
       console.error("Error fetching faculty lectures:", error);
     } finally {
       setLoading(false);
@@ -50,14 +53,17 @@ const MyLectures: React.FC = () => {
       });
 
       if (response.success) {
+        showToast.success('Lecture marked as completed');
         // Remove the completed lecture from the list
         setLectures((prev) =>
           prev.filter((l) => l.lectureId !== lecture.lectureId)
         );
+      } else {
+        showToast.error('Failed to mark lecture as completed');
       }
     } catch (error) {
+      handleApiError(error, 'Failed to mark lecture as completed');
       console.error("Error marking lecture as completed:", error);
-      setError("Failed to mark lecture as completed");
     } finally {
       setCompletingLecture(null);
     }

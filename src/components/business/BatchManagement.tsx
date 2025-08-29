@@ -8,16 +8,23 @@ import {
   Users,
   Clock,
   AlertTriangle,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   apiService,
   Batch,
   CreateBatchPayload,
   Course,
   User,
+  PaginationParams,
 } from "../../services/api";
+import { showToast, handleApiError } from "../../utils/toast";
 
 const BatchManagement: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -30,6 +37,15 @@ const BatchManagement: React.FC = () => {
     Record<string, string>
   >({});
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [statusFilter, setStatusFilter] = useState("");
+
   // Form state
   const [formData, setFormData] = useState({
     name: "",
@@ -41,17 +57,43 @@ const BatchManagement: React.FC = () => {
     fetchBatches();
     fetchCourses();
     fetchTeachers();
-  }, []);
+  }, [currentPage, itemsPerPage, sortBy, sortOrder, searchTerm, statusFilter]);
+
+  // Add debounced search effect
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage !== 1) {
+        setCurrentPage(1); // Reset to first page when search/filter changes
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, statusFilter]);
 
   const fetchBatches = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getBatches();
+      const paginationParams: PaginationParams = {
+        page: currentPage,
+        limit: itemsPerPage,
+        sortBy,
+        sortOrder,
+        ...(searchTerm && { search: searchTerm }),
+        ...(statusFilter && { status: statusFilter }),
+      };
+
+      const response = await apiService.getBatches(paginationParams);
       if (response.success) {
         setBatches(response.data);
+        if (response.pagination) {
+          setTotalPages(response.pagination.totalPages);
+          setTotalItems(response.pagination.totalItems);
+        }
+      } else {
+        showToast.error('Failed to fetch batches');
       }
     } catch (error) {
-      setError("Failed to fetch batches");
+      handleApiError(error, 'Failed to fetch batches');
       console.error("Error fetching batches:", error);
     } finally {
       setLoading(false);
@@ -63,8 +105,11 @@ const BatchManagement: React.FC = () => {
       const response = await apiService.getCourses();
       if (response.success) {
         setCourses(response.data);
+      } else {
+        showToast.error('Failed to fetch courses');
       }
     } catch (error) {
+      handleApiError(error, 'Failed to fetch courses');
       console.error("Error fetching courses:", error);
     }
   };
@@ -77,8 +122,11 @@ const BatchManagement: React.FC = () => {
           (user) => user.role === "faculty"
         );
         setTeachers(facultyUsers);
+      } else {
+        showToast.error('Failed to fetch teachers');
       }
     } catch (error) {
+      handleApiError(error, 'Failed to fetch teachers');
       console.error("Error fetching teachers:", error);
     }
   };
@@ -127,14 +175,17 @@ const BatchManagement: React.FC = () => {
 
       const response = await apiService.createBatch(payload);
       if (response.success) {
+        showToast.success('Batch created successfully');
         setShowAddModal(false);
         setFormData({ name: "", courseTemplateId: "", startDate: "" });
         setSelectedCourse(null);
         setFacultyAssignments({});
         fetchBatches(); // Refresh the list
+      } else {
+        showToast.error('Failed to create batch');
       }
     } catch (error) {
-      setError("Failed to create batch");
+      handleApiError(error, 'Failed to create batch');
       console.error("Error creating batch:", error);
     } finally {
       setLoading(false);
@@ -176,6 +227,15 @@ const BatchManagement: React.FC = () => {
     return daysDiff;
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (limit: number) => {
+    setItemsPerPage(limit);
+    setCurrentPage(1); // Reset to first page
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -198,24 +258,66 @@ const BatchManagement: React.FC = () => {
 
       {/* Search and Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col lg:flex-row items-center space-y-4 lg:space-y-0 lg:space-x-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search batches by name, course, or teacher..."
+              placeholder="Search batches by name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
-          <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          >
             <option value="">All Status</option>
             <option value="active">Active</option>
             <option value="upcoming">Upcoming</option>
             <option value="expiring">Expiring Soon</option>
             <option value="completed">Completed</option>
           </select>
+          <select
+            value={`${sortBy}-${sortOrder}`}
+            onChange={(e) => {
+              const [field, order] = e.target.value.split("-");
+              setSortBy(field);
+              setSortOrder(order as "asc" | "desc");
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          >
+            <option value="createdAt-desc">Newest First</option>
+            <option value="createdAt-asc">Oldest First</option>
+            <option value="name-asc">Name A-Z</option>
+            <option value="name-desc">Name Z-A</option>
+          </select>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          >
+            <option value={5}>5 per page</option>
+            <option value={10}>10 per page</option>
+            <option value={20}>20 per page</option>
+            <option value={50}>50 per page</option>
+          </select>
+        </div>
+
+        {/* Results Info */}
+        <div className="mt-4 text-sm text-gray-600">
+          {totalItems > 0 ? (
+            <>
+              Showing{" "}
+              {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{" "}
+              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}{" "}
+              batches
+            </>
+          ) : (
+            "No batches found"
+          )}
         </div>
       </div>
 
@@ -228,7 +330,7 @@ const BatchManagement: React.FC = () => {
 
       {/* Batches Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredBatches.map((batch) => {
+        {batches.map((batch) => {
           const daysRemaining = getDaysRemaining(batch.endDate);
           const isExpiringSoon = daysRemaining <= 7 && daysRemaining > 0;
           const batchStatus = getBatchStatus(batch);
@@ -327,7 +429,8 @@ const BatchManagement: React.FC = () => {
 
                 {/* Subjects Preview */}
                 <div className="pt-4 border-t border-gray-200">
-                  <div>
+                  <div className="flex items-center justify-between">
+                    <div>
                     <p className="text-sm text-gray-600 mb-2">Subjects</p>
                     <div className="space-y-1">
                       {batch.subjects.slice(0, 2).map((subject) => (
@@ -345,12 +448,76 @@ const BatchManagement: React.FC = () => {
                       )}
                     </div>
                   </div>
+                    <button
+                      onClick={() => navigate(`/batches/${batch._id}`)}
+                      className="flex items-center space-x-1 text-sm text-red-600 hover:text-red-800 font-medium"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>View</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-700">
+              Page {currentPage} of {totalPages} ({totalItems} total batches)
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {/* Page Numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`px-3 py-1 rounded-md text-sm ${
+                      pageNum === currentPage
+                        ? "bg-red-600 text-white"
+                        : "border border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Batch Modal */}
       {showAddModal && (

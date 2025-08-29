@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Calendar, Clock, User, BookOpen, TrendingUp, Filter } from 'lucide-react';
+import { showToast } from '../../utils/toast';
 
 interface LectureAssignment {
   id: string;

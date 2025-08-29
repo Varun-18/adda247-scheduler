@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Edit, Trash2, ChevronDown, ChevronRight, BookOpen, Clock, Play } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Course, Subject, Topic, Lecture, apiService, AddSubjectPayload, AddTopicPayload, AddLecturePayload, UpdateSubjectPayload, UpdateTopicPayload, UpdateLecturePayload } from '../../services/api';
+import { showToast, handleApiError } from '../../utils/toast';
 
-interface CourseDetailsProps {
-  course: Course;
-  onBack: () => void;
-  onUpdate: () => void;
-}
-
-const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, onBack, onUpdate }) => {
-  const [course, setCourse] = useState<Course>(initialCourse);
+const CourseDetails: React.FC = () => {
+  const { courseId } = useParams<{ courseId: string }>();
+  const navigate = useNavigate();
+  const [course, setCourse] = useState<Course | null>(null);
   const [expandedSubjects, setExpandedSubjects] = useState<Set<string>>(new Set());
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
   const [showAddSubjectModal, setShowAddSubjectModal] = useState(false);
@@ -56,14 +54,23 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
   }, []);
 
   const fetchCourseDetails = async () => {
+    if (!courseId) {
+      navigate('/courses');
+      return;
+    }
+
     try {
       setLoading(true);
-      const response = await apiService.getCourseById(course._id);
+      const response = await apiService.getCourseById(courseId);
       if (response.success) {
         setCourse(response.data);
+      } else {
+        showToast.error('Failed to load course details');
+        navigate('/courses');
       }
     } catch (error) {
-      setError('Failed to fetch course details');
+      handleApiError(error, 'Failed to fetch course details');
+      navigate('/courses');
       console.error('Error fetching course details:', error);
     } finally {
       setLoading(false);
@@ -92,6 +99,8 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
 
   const handleAddSubject = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!course) return;
+
     try {
       setLoading(true);
       const payload: AddSubjectPayload = {
@@ -103,13 +112,15 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
 
       const response = await apiService.addSubject(payload);
       if (response.success) {
+        showToast.success('Subject added successfully');
         setShowAddSubjectModal(false);
         setSubjectForm({ title: '', description: '', order: 1 });
         fetchCourseDetails();
-        onUpdate();
+      } else {
+        showToast.error('Failed to add subject');
       }
     } catch (error) {
-      setError('Failed to add subject');
+      handleApiError(error, 'Failed to add subject');
       console.error('Error adding subject:', error);
     } finally {
       setLoading(false);
@@ -128,7 +139,7 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
 
   const handleUpdateSubject = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingSubject) return;
+    if (!editingSubject || !course) return;
 
     try {
       setLoading(true);
@@ -142,13 +153,15 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
 
       const response = await apiService.updateSubject(payload);
       if (response.success) {
+        showToast.success('Subject updated successfully');
         setShowAddSubjectModal(false);
         resetForms();
         fetchCourseDetails();
-        onUpdate();
+      } else {
+        showToast.error('Failed to update subject');
       }
     } catch (error) {
-      setError('Failed to update subject');
+      handleApiError(error, 'Failed to update subject');
       console.error('Error updating subject:', error);
     } finally {
       setLoading(false);
@@ -168,7 +181,7 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
 
   const handleUpdateTopic = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSubject || !editingTopic) return;
+    if (!selectedSubject || !editingTopic || !course) return;
 
     try {
       setLoading(true);
@@ -183,13 +196,15 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
 
       const response = await apiService.updateTopic(payload);
       if (response.success) {
+        showToast.success('Topic updated successfully');
         setShowAddTopicModal(false);
         resetForms();
         fetchCourseDetails();
-        onUpdate();
+      } else {
+        showToast.error('Failed to update topic');
       }
     } catch (error) {
-      setError('Failed to update topic');
+      handleApiError(error, 'Failed to update topic');
       console.error('Error updating topic:', error);
     } finally {
       setLoading(false);
@@ -210,7 +225,7 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
 
   const handleUpdateLecture = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSubject || !selectedTopic || !editingLecture) return;
+    if (!selectedSubject || !selectedTopic || !editingLecture || !course) return;
 
     try {
       setLoading(true);
@@ -226,13 +241,15 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
 
       const response = await apiService.updateLecture(payload);
       if (response.success) {
+        showToast.success('Lecture updated successfully');
         setShowAddLectureModal(false);
         resetForms();
         fetchCourseDetails();
-        onUpdate();
+      } else {
+        showToast.error('Failed to update lecture');
       }
     } catch (error) {
-      setError('Failed to update lecture');
+      handleApiError(error, 'Failed to update lecture');
       console.error('Error updating lecture:', error);
     } finally {
       setLoading(false);
@@ -241,7 +258,7 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
 
   const handleAddTopic = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSubject) return;
+    if (!selectedSubject || !course) return;
 
     try {
       setLoading(true);
@@ -255,14 +272,16 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
 
       const response = await apiService.addTopic(payload);
       if (response.success) {
+        showToast.success('Topic added successfully');
         setShowAddTopicModal(false);
         setTopicForm({ title: '', description: '', order: 1 });
         resetForms();
         fetchCourseDetails();
-        onUpdate();
+      } else {
+        showToast.error('Failed to add topic');
       }
     } catch (error) {
-      setError('Failed to add topic');
+      handleApiError(error, 'Failed to add topic');
       console.error('Error adding topic:', error);
     } finally {
       setLoading(false);
@@ -271,7 +290,7 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
 
   const handleAddLecture = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSubject || !selectedTopic) return;
+    if (!selectedSubject || !selectedTopic || !course) return;
 
     try {
       setLoading(true);
@@ -286,14 +305,16 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
 
       const response = await apiService.addLecture(payload);
       if (response.success) {
+        showToast.success('Lecture added successfully');
         setShowAddLectureModal(false);
         setLectureForm({ title: '', description: '', order: 1 });
         resetForms();
         fetchCourseDetails();
-        onUpdate();
+      } else {
+        showToast.error('Failed to add lecture');
       }
     } catch (error) {
-      setError('Failed to add lecture');
+      handleApiError(error, 'Failed to add lecture');
       console.error('Error adding lecture:', error);
     } finally {
       setLoading(false);
@@ -313,12 +334,39 @@ const CourseDetails: React.FC<CourseDetailsProps> = ({ course: initialCourse, on
     setShowAddLectureModal(true);
   };
 
+  if (loading && !course) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+          <p className="mt-2 text-gray-600">Loading course details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-gray-600">Course not found</p>
+          <button
+            onClick={() => navigate('/courses')}
+            className="mt-4 text-red-600 hover:text-red-800 font-medium"
+          >
+            ← Back to Courses
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <button
-          onClick={onBack}
+          onClick={() => navigate('/courses')}
           className="flex items-center space-x-2 text-red-600 hover:text-red-800 font-medium"
         >
           <ArrowLeft className="w-5 h-5" />

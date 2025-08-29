@@ -9,6 +9,7 @@ import {
   Play,
 } from "lucide-react";
 import { apiService, FacultyBatch } from "../../services/api";
+import { showToast, handleApiError } from "../../utils/toast";
 
 const MyCourses: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,9 +31,11 @@ const MyCourses: React.FC = () => {
       const response = await apiService.getFacultySubjects();
       if (response.success) {
         setBatches(response.data);
+      } else {
+        showToast.error('Failed to fetch your courses');
       }
     } catch (error) {
-      setError("Failed to fetch your courses");
+      handleApiError(error, 'Failed to fetch your courses');
       console.error("Error fetching faculty subjects:", error);
     } finally {
       setLoading(false);
@@ -63,11 +66,14 @@ const MyCourses: React.FC = () => {
       });
 
       if (response.success) {
+        showToast.success('Lecture marked as completed');
         fetchFacultySubjects();
+      } else {
+        showToast.error('Failed to mark lecture as completed');
       }
     } catch (error) {
+      handleApiError(error, 'Failed to mark lecture as completed');
       console.error("Error marking lecture as completed:", error);
-      setError("Failed to mark lecture as completed");
     } finally {
       setCompletingLecture(null);
     }

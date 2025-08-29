@@ -39,12 +39,6 @@ const Sidebar: React.FC<SidebarProps> = ({ showMenu, setShowMenu }) => {
       icon: Clock,
       label: "Lecture Tracking",
     },
-    {
-      id: "analytics",
-      path: "/analytics",
-      icon: BarChart3,
-      label: "Analytics",
-    },
   ];
 
   const teacherMenuItems = [
