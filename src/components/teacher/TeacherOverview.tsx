@@ -1,5 +1,6 @@
 import React from 'react';
-import { BookOpen, Clock, CheckCircle, Calendar, TrendingUp, Users } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Calendar, TrendingUp } from 'lucide-react';
+import { showToast } from '../../utils/toast';
 
 const TeacherOverview: React.FC = () => {
   const stats = [
@@ -180,9 +181,9 @@ const TeacherOverview: React.FC = () => {
         <div className="p-4 sm:p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {[
-              { course: 'Advanced Mathematics', progress: 75, topics: '15/20', students: 25 },
-              { course: 'Basic Physics', progress: 60, topics: '12/20', students: 20 },
-              { course: 'Applied Chemistry', progress: 90, topics: '18/20', students: 15 }
+              { course: 'Advanced Mathematics', progress: 75, topics: '15/20' },
+              { course: 'Basic Physics', progress: 60, topics: '12/20' },
+              { course: 'Applied Chemistry', progress: 90, topics: '18/20' }
             ].map((course, index) => (
               <div key={index} className="border border-gray-200 rounded-lg p-4">
                 <h3 className="font-medium text-gray-900 mb-3 text-sm sm:text-base">{course.course}</h3>
@@ -204,14 +205,6 @@ const TeacherOverview: React.FC = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Topics Completed:</span>
                     <span className="text-gray-900">{course.topics}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center space-x-1 text-gray-600">
-                      <Users className="w-4 h-4" />
-                      <span>Students:</span>
-                    </div>
-                    <span className="text-gray-900">{course.students}</span>
                   </div>
                 </div>
               </div>
@@ -237,7 +230,7 @@ const TeacherOverview: React.FC = () => {
           <button className="p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-left sm:col-span-2 lg:col-span-1">
             <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 mb-2" />
             <h3 className="font-medium text-gray-900 text-sm sm:text-base">View Assignments</h3>
-            <p className="text-xs sm:text-sm text-gray-600">Check course assignments</p>
+            <p className="text-xs sm:text-sm text-gray-600">Check lecture assignments</p>
           </button>
         </div>
       </div>
