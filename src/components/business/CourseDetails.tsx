@@ -115,7 +115,7 @@ const CourseDetails: React.FC = () => {
         showToast.success('Subject added successfully');
         setShowAddSubjectModal(false);
         setSubjectForm({ title: '', description: '', order: 1 });
-        fetchCourseDetails();
+        fetchCourseDetails(); // Revalidate data
       } else {
         showToast.error('Failed to add subject');
       }
@@ -156,7 +156,7 @@ const CourseDetails: React.FC = () => {
         showToast.success('Subject updated successfully');
         setShowAddSubjectModal(false);
         resetForms();
-        fetchCourseDetails();
+        fetchCourseDetails(); // Revalidate data
       } else {
         showToast.error('Failed to update subject');
       }
@@ -199,7 +199,7 @@ const CourseDetails: React.FC = () => {
         showToast.success('Topic updated successfully');
         setShowAddTopicModal(false);
         resetForms();
-        fetchCourseDetails();
+        fetchCourseDetails(); // Revalidate data
       } else {
         showToast.error('Failed to update topic');
       }
@@ -244,7 +244,7 @@ const CourseDetails: React.FC = () => {
         showToast.success('Lecture updated successfully');
         setShowAddLectureModal(false);
         resetForms();
-        fetchCourseDetails();
+        fetchCourseDetails(); // Revalidate data
       } else {
         showToast.error('Failed to update lecture');
       }
@@ -276,7 +276,7 @@ const CourseDetails: React.FC = () => {
         setShowAddTopicModal(false);
         setTopicForm({ title: '', description: '', order: 1 });
         resetForms();
-        fetchCourseDetails();
+        fetchCourseDetails(); // Revalidate data
       } else {
         showToast.error('Failed to add topic');
       }
@@ -309,7 +309,7 @@ const CourseDetails: React.FC = () => {
         setShowAddLectureModal(false);
         setLectureForm({ title: '', description: '', order: 1 });
         resetForms();
-        fetchCourseDetails();
+        fetchCourseDetails(); // Revalidate data
       } else {
         showToast.error('Failed to add lecture');
       }

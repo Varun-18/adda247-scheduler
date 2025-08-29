@@ -512,6 +512,19 @@ class ApiService {
       body: JSON.stringify(payload),
     });
   }
+
+  // Faculty Analytics APIs
+  async getFacultyAnalytics(): Promise<ApiResponse<FacultyAnalytics>> {
+    return this.request<FacultyAnalytics>("/batch/faculty/analytics");
+  }
+
+  async getFacultyRecentActivity(): Promise<ApiResponse<FacultyRecentActivity[]>> {
+    return this.request<FacultyRecentActivity[]>("/batch/faculty/recent-activity");
+  }
+
+  async getFacultyProgress(): Promise<ApiResponse<FacultyProgressBatch[]>> {
+    return this.request<FacultyProgressBatch[]>("/batch/faculty/progress");
+  }
 }
 
 export const apiService = new ApiService();

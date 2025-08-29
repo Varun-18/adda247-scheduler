@@ -180,7 +180,7 @@ const BatchManagement: React.FC = () => {
         setFormData({ name: "", courseTemplateId: "", startDate: "" });
         setSelectedCourse(null);
         setFacultyAssignments({});
-        fetchBatches(); // Refresh the list
+        fetchBatches(); // Revalidate data
       } else {
         showToast.error('Failed to create batch');
       }

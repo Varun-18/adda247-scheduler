@@ -121,7 +121,7 @@ const CourseManagement: React.FC = () => {
           durationUnit: "months",
           status: "active",
         });
-        fetchCourses(); // Refresh the list
+        fetchCourses(); // Revalidate data
       } else {
         showToast.error('Failed to create course');
       }
@@ -177,7 +177,7 @@ const CourseManagement: React.FC = () => {
           durationUnit: "months",
           status: "active",
         });
-        fetchCourses(); // Refresh the list
+        fetchCourses(); // Revalidate data
       } else {
         showToast.error('Failed to update course');
       }

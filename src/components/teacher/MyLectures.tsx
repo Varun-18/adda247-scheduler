@@ -58,6 +58,10 @@ const MyLectures: React.FC = () => {
         setLectures((prev) =>
           prev.filter((l) => l.lectureId !== lecture.lectureId)
         );
+        // Optionally refresh the entire list to ensure consistency
+        setTimeout(() => {
+          fetchFacultyLectures();
+        }, 1000);
       } else {
         showToast.error('Failed to mark lecture as completed');
       }

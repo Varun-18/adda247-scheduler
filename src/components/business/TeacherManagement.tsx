@@ -132,7 +132,7 @@ const TeacherManagement: React.FC = () => {
           qualification: "",
           joiningDate: "",
         });
-        fetchTeachers(); // Refresh the list
+        fetchTeachers(); // Revalidate data
       } else {
         showToast.error('Failed to create teacher');
       }

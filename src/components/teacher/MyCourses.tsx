@@ -67,7 +67,7 @@ const MyCourses: React.FC = () => {
 
       if (response.success) {
         showToast.success('Lecture marked as completed');
-        fetchFacultySubjects();
+        fetchFacultySubjects(); // Revalidate data
       } else {
         showToast.error('Failed to mark lecture as completed');
       }
