@@ -346,14 +346,17 @@ class ApiService {
     return this.request<User>("/user");
   }
 
-  async getAllUsers(pagination?: PaginationParams): Promise<ApiResponse<User[]>> {
+  async getAllUsers(
+    pagination?: PaginationParams
+  ): Promise<ApiResponse<User[]>> {
     const params = new URLSearchParams();
 
     if (pagination) {
       if (pagination.page) params.append("page", pagination.page.toString());
       if (pagination.limit) params.append("limit", pagination.limit.toString());
       if (pagination.sortBy) params.append("sortBy", pagination.sortBy);
-      if (pagination.sortOrder) params.append("sortOrder", pagination.sortOrder);
+      if (pagination.sortOrder)
+        params.append("sortOrder", pagination.sortOrder);
       if (pagination.search) params.append("search", pagination.search);
       if (pagination.status) params.append("status", pagination.status);
     }
@@ -362,6 +365,10 @@ class ApiService {
     const endpoint = queryString ? `/user/list?${queryString}` : "/user/list";
 
     return this.request<User[]>(endpoint);
+  }
+
+  async listAllFaculties(): Promise<ApiResponse<User[]>> {
+    return this.request<User[]>("/user/list/faculty");
   }
 
   async createUser(payload: CreateUserPayload): Promise<ApiResponse<User>> {
@@ -381,9 +388,9 @@ class ApiService {
     });
   }
 
-  // async getCourses(): Promise<ApiResponse<Course[]>> {
-  //   return this.request<Course[]>("/course/list");
-  // }
+  async getAllCourses(): Promise<ApiResponse<Course[]>> {
+    return this.request<Course[]>("/course/all");
+  }
   async getCourses(
     pagination?: PaginationParams
   ): Promise<ApiResponse<Course[]>> {
@@ -477,14 +484,17 @@ class ApiService {
     });
   }
 
-  async getBatches(pagination?: PaginationParams): Promise<ApiResponse<Batch[]>> {
+  async getBatches(
+    pagination?: PaginationParams
+  ): Promise<ApiResponse<Batch[]>> {
     const params = new URLSearchParams();
 
     if (pagination) {
       if (pagination.page) params.append("page", pagination.page.toString());
       if (pagination.limit) params.append("limit", pagination.limit.toString());
       if (pagination.sortBy) params.append("sortBy", pagination.sortBy);
-      if (pagination.sortOrder) params.append("sortOrder", pagination.sortOrder);
+      if (pagination.sortOrder)
+        params.append("sortOrder", pagination.sortOrder);
       if (pagination.search) params.append("search", pagination.search);
       if (pagination.status) params.append("status", pagination.status);
     }
@@ -518,8 +528,12 @@ class ApiService {
     return this.request<FacultyAnalytics>("/batch/faculty/analytics");
   }
 
-  async getFacultyRecentActivity(): Promise<ApiResponse<FacultyRecentActivity[]>> {
-    return this.request<FacultyRecentActivity[]>("/batch/faculty/recent-activity");
+  async getFacultyRecentActivity(): Promise<
+    ApiResponse<FacultyRecentActivity[]>
+  > {
+    return this.request<FacultyRecentActivity[]>(
+      "/batch/faculty/recent-activity"
+    );
   }
 
   async getFacultyProgress(): Promise<ApiResponse<FacultyProgressBatch[]>> {

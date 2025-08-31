@@ -90,10 +90,10 @@ const BatchManagement: React.FC = () => {
           setTotalItems(response.pagination.totalItems);
         }
       } else {
-        showToast.error('Failed to fetch batches');
+        showToast.error("Failed to fetch batches");
       }
     } catch (error) {
-      handleApiError(error, 'Failed to fetch batches');
+      handleApiError(error, "Failed to fetch batches");
       console.error("Error fetching batches:", error);
     } finally {
       setLoading(false);
@@ -102,31 +102,31 @@ const BatchManagement: React.FC = () => {
 
   const fetchCourses = async () => {
     try {
-      const response = await apiService.getCourses();
+      const response = await apiService.getAllCourses();
       if (response.success) {
         setCourses(response.data);
       } else {
-        showToast.error('Failed to fetch courses');
+        showToast.error("Failed to fetch courses");
       }
     } catch (error) {
-      handleApiError(error, 'Failed to fetch courses');
+      handleApiError(error, "Failed to fetch courses");
       console.error("Error fetching courses:", error);
     }
   };
 
   const fetchTeachers = async () => {
     try {
-      const response = await apiService.getAllUsers();
+      const response = await apiService.listAllFaculties();
       if (response.success) {
         const facultyUsers = response.data.filter(
           (user) => user.role === "faculty"
         );
         setTeachers(facultyUsers);
       } else {
-        showToast.error('Failed to fetch teachers');
+        showToast.error("Failed to fetch teachers");
       }
     } catch (error) {
-      handleApiError(error, 'Failed to fetch teachers');
+      handleApiError(error, "Failed to fetch teachers");
       console.error("Error fetching teachers:", error);
     }
   };
@@ -175,17 +175,17 @@ const BatchManagement: React.FC = () => {
 
       const response = await apiService.createBatch(payload);
       if (response.success) {
-        showToast.success('Batch created successfully');
+        showToast.success("Batch created successfully");
         setShowAddModal(false);
         setFormData({ name: "", courseTemplateId: "", startDate: "" });
         setSelectedCourse(null);
         setFacultyAssignments({});
         fetchBatches(); // Revalidate data
       } else {
-        showToast.error('Failed to create batch');
+        showToast.error("Failed to create batch");
       }
     } catch (error) {
-      handleApiError(error, 'Failed to create batch');
+      handleApiError(error, "Failed to create batch");
       console.error("Error creating batch:", error);
     } finally {
       setLoading(false);
@@ -269,7 +269,7 @@ const BatchManagement: React.FC = () => {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
-          <select 
+          <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -431,23 +431,23 @@ const BatchManagement: React.FC = () => {
                 <div className="pt-4 border-t border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                    <p className="text-sm text-gray-600 mb-2">Subjects</p>
-                    <div className="space-y-1">
-                      {batch.subjects.slice(0, 2).map((subject) => (
-                        <div
-                          key={subject._id}
-                          className="text-xs text-gray-900"
-                        >
-                          • {subject.title}
-                        </div>
-                      ))}
-                      {batch.subjects.length > 2 && (
-                        <p className="text-xs text-gray-500">
-                          +{batch.subjects.length - 2} more
-                        </p>
-                      )}
+                      <p className="text-sm text-gray-600 mb-2">Subjects</p>
+                      <div className="space-y-1">
+                        {batch.subjects.slice(0, 2).map((subject) => (
+                          <div
+                            key={subject._id}
+                            className="text-xs text-gray-900"
+                          >
+                            • {subject.title}
+                          </div>
+                        ))}
+                        {batch.subjects.length > 2 && (
+                          <p className="text-xs text-gray-500">
+                            +{batch.subjects.length - 2} more
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
                     <button
                       onClick={() => navigate(`/batches/${batch._id}`)}
                       className="flex items-center space-x-1 text-sm text-red-600 hover:text-red-800 font-medium"
