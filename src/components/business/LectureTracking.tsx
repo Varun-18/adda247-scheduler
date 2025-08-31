@@ -1,179 +1,138 @@
-import React, { useState } from 'react';
-import { Search, Calendar, Clock, User, BookOpen, TrendingUp, Filter } from 'lucide-react';
-import { showToast } from '../../utils/toast';
-
-interface LectureAssignment {
-  id: string;
-  teacher: string;
-  subject: string;
-  totalLectures: number;
-  completedLectures: number;
-  remainingLectures: number;
-  batch: string;
-  lastLectureDate: string;
-}
-
-interface LectureRecord {
-  id: string;
-  teacher: string;
-  subject: string;
-  batch: string;
-  date: string;
-  duration: number;
-  status: 'completed' | 'missed' | 'rescheduled';
-}
+import React, { useState, useEffect } from 'react';
+import { Search, Calendar, Clock, User, BookOpen, TrendingUp, Filter, RefreshCw, Target, CheckCircle } from 'lucide-react';
+import { apiService, BusinessOverviewItem, BusinessActivity } from '../../services/api';
+import { showToast, handleApiError } from '../../utils/toast';
 
 const LectureTracking: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'assignments' | 'daily' | 'monthly'>('assignments');
+  const [activeTab, setActiveTab] = useState<'assignments' | 'activity'>('assignments');
   const [searchTerm, setSearchTerm] = useState('');
+  const [overview, setOverview] = useState<BusinessOverviewItem[]>([]);
+  const [recentActivity, setRecentActivity] = useState<BusinessActivity[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data for lecture assignments
-  const lectureAssignments: LectureAssignment[] = [
-    {
-      id: '1',
-      teacher: 'Sarah Johnson',
-      subject: 'Mathematics',
-      totalLectures: 80,
-      completedLectures: 45,
-      remainingLectures: 35,
-      batch: 'Math Batch A',
-      lastLectureDate: '2024-01-25'
-    },
-    {
-      id: '2',
-      teacher: 'Sarah Johnson',
-      subject: 'Physics',
-      totalLectures: 60,
-      completedLectures: 20,
-      remainingLectures: 40,
-      batch: 'Physics Batch A',
-      lastLectureDate: '2024-01-24'
-    },
-    {
-      id: '3',
-      teacher: 'Michael Brown',
-      subject: 'Chemistry',
-      totalLectures: 70,
-      completedLectures: 35,
-      remainingLectures: 35,
-      batch: 'Chemistry Batch B',
-      lastLectureDate: '2024-01-26'
-    },
-    {
-      id: '4',
-      teacher: 'Emily Davis',
-      subject: 'English',
-      totalLectures: 50,
-      completedLectures: 42,
-      remainingLectures: 8,
-      batch: 'Writing Batch C',
-      lastLectureDate: '2024-01-25'
-    }
-  ];
+  useEffect(() => {
+    fetchLectureData();
+  }, []);
 
-  // Mock data for daily lecture records
-  const dailyRecords: LectureRecord[] = [
-    {
-      id: '1',
-      teacher: 'Sarah Johnson',
-      subject: 'Mathematics',
-      batch: 'Math Batch A',
-      date: '2024-01-26',
-      duration: 60,
-      status: 'completed'
-    },
-    {
-      id: '2',
-      teacher: 'Michael Brown',
-      subject: 'Chemistry',
-      batch: 'Chemistry Batch B',
-      date: '2024-01-26',
-      duration: 45,
-      status: 'completed'
-    },
-    {
-      id: '3',
-      teacher: 'Emily Davis',
-      subject: 'English',
-      batch: 'Writing Batch C',
-      date: '2024-01-25',
-      duration: 50,
-      status: 'completed'
-    },
-    {
-      id: '4',
-      teacher: 'Dr. Wilson',
-      subject: 'Physics',
-      batch: 'Physics Batch D',
-      date: '2024-01-25',
-      duration: 0,
-      status: 'missed'
-    }
-  ];
+  const fetchLectureData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  const getProgressColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600 bg-green-100';
-    if (percentage >= 60) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
-  };
+      const [overviewResponse, activityResponse] = await Promise.all([
+        apiService.getBusinessOverview(),
+        apiService.getBusinessActivity()
+      ]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'missed':
-        return 'bg-red-100 text-red-800';
-      case 'rescheduled':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      if (overviewResponse.success) {
+        setOverview(overviewResponse.data);
+      } else {
+        throw new Error('Failed to fetch overview data');
+      }
+
+      if (activityResponse.success) {
+        setRecentActivity(activityResponse.data);
+      } else {
+        throw new Error('Failed to fetch activity data');
+      }
+
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch lecture tracking data');
+      setError('Failed to load lecture tracking data');
+      console.error('Error fetching lecture tracking data:', error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+      return `${diffInMinutes} minutes ago`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours} hours ago`;
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays} days ago`;
+    }
+  };
+
+  const filteredOverview = overview.filter(item =>
+    item.faculty.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.faculty.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.subjectTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.batchName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredActivity = recentActivity.filter(activity =>
+    activity.batchName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    activity.subjectTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    activity.lectureTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    activity.topicTitle.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const calculateSummaryStats = () => {
+    const totalLectures = overview.reduce((acc, item) => acc + item.totalLectures, 0);
+    const completedLectures = overview.reduce((acc, item) => acc + item.completedLectures, 0);
+    const activeTeachers = new Set(overview.map(item => item.facultyId)).size;
+    const averageCompletion = overview.length > 0 
+      ? Math.round(overview.reduce((acc, item) => acc + item.completionRate, 0) / overview.length)
+      : 0;
+
+    return { totalLectures, completedLectures, activeTeachers, averageCompletion };
+  };
+
+  const summaryStats = calculateSummaryStats();
 
   const renderAssignmentsTab = () => (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <User className="w-6 h-6 text-blue-600" />
+            <div className="p-2 sm:p-3 bg-blue-100 rounded-lg">
+              <User className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-900">4</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{summaryStats.activeTeachers}</h3>
               <p className="text-sm text-gray-600">Active Teachers</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <BookOpen className="w-6 h-6 text-green-600" />
+            <div className="p-2 sm:p-3 bg-green-100 rounded-lg">
+              <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-900">260</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{summaryStats.totalLectures}</h3>
               <p className="text-sm text-gray-600">Total Lectures</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-red-100 rounded-lg">
-              <Clock className="w-6 h-6 text-red-600" />
+            <div className="p-2 sm:p-3 bg-red-100 rounded-lg">
+              <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-900">142</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{summaryStats.completedLectures}</h3>
               <p className="text-sm text-gray-600">Completed</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-yellow-600" />
+            <div className="p-2 sm:p-3 bg-yellow-100 rounded-lg">
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-900">55%</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{summaryStats.averageCompletion}%</h3>
               <p className="text-sm text-gray-600">Average Progress</p>
             </div>
           </div>
@@ -182,62 +141,76 @@ const LectureTracking: React.FC = () => {
 
       {/* Lecture Assignments Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Lecture Assignments</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teacher</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remaining</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Lecture</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teacher</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Batch</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Remaining</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Last Lecture</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {lectureAssignments.map((assignment) => {
-                const progress = (assignment.completedLectures / assignment.totalLectures) * 100;
-                return (
-                  <tr key={assignment.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{assignment.teacher}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{assignment.subject}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{assignment.batch}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-red-600 h-2 rounded-full"
-                            style={{ width: `${progress}%` }}
-                          ></div>
+              {filteredOverview.map((assignment, index) => (
+                <tr key={`${assignment.batchId}-${assignment.subjectId}-${index}`} className="hover:bg-gray-50">
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-gray-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">
+                          {assignment.faculty.firstName} {assignment.faculty.lastName}
                         </div>
-                        <span className="text-sm text-gray-900">{Math.round(progress)}%</span>
+                        <div className="text-xs text-gray-500 truncate sm:hidden">
+                          {assignment.batchName}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {assignment.completedLectures}/{assignment.totalLectures}
+                    </div>
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 truncate max-w-32 sm:max-w-none">{assignment.subjectTitle}</div>
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
+                    <div className="text-sm text-gray-900 truncate">{assignment.batchName}</div>
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-12 sm:w-20 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            assignment.completionRate === 100 ? 'bg-green-600' :
+                            assignment.completionRate >= 75 ? 'bg-blue-600' :
+                            assignment.completionRate >= 50 ? 'bg-yellow-600' : 'bg-red-600'
+                          }`}
+                          style={{ width: `${assignment.completionRate}%` }}
+                        ></div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        assignment.remainingLectures <= 10 ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {assignment.remainingLectures} left
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(assignment.lastLectureDate).toLocaleDateString()}
-                    </td>
-                  </tr>
-                );
-              })}
+                      <span className="text-sm text-gray-900 w-8 text-right">{assignment.completionRate}%</span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {assignment.completedLectures}/{assignment.totalLectures}
+                    </div>
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      assignment.remainingLectures === 0 ? 'bg-green-100 text-green-800' :
+                      assignment.remainingLectures <= 5 ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {assignment.remainingLectures} left
+                    </span>
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
+                    {assignment.lastLecture ? new Date(assignment.lastLecture).toLocaleDateString() : 'No lectures yet'}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -245,89 +218,107 @@ const LectureTracking: React.FC = () => {
     </div>
   );
 
-  const renderDailyTab = () => (
+  const renderActivityTab = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Today's Lecture Records</h2>
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Recent Lecture Activity</h2>
         </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {dailyRecords.map((record) => (
-              <div key={record.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-medium text-gray-900">{record.subject}</h3>
-                  <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(record.status)}`}>
-                    {record.status}
-                  </span>
+        <div className="p-4 sm:p-6">
+          {filteredActivity.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {filteredActivity.map((activity, index) => (
+                <div key={`${activity.lectureId}-${index}`} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium text-gray-900 text-sm sm:text-base truncate">{activity.lectureTitle}</h3>
+                    <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 flex-shrink-0">
+                      Completed
+                    </span>
+                  </div>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="flex justify-between">
+                      <span>Subject:</span>
+                      <span className="text-gray-900 truncate ml-2">{activity.subjectTitle}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Batch:</span>
+                      <span className="text-gray-900 truncate ml-2">{activity.batchName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Topic:</span>
+                      <span className="text-gray-900 truncate ml-2">{activity.topicTitle}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Completed:</span>
+                      <span className="text-gray-900">{formatDate(activity.completedAt)}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex justify-between">
-                    <span>Teacher:</span>
-                    <span className="text-gray-900">{record.teacher}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Batch:</span>
-                    <span className="text-gray-900">{record.batch}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Duration:</span>
-                    <span className="text-gray-900">{record.duration} min</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Date:</span>
-                    <span className="text-gray-900">{new Date(record.date).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No recent activity</h3>
+              <p className="text-gray-600">No lectures have been completed recently</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 
-  const renderMonthlyTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600 mb-2">156</div>
-            <p className="text-gray-600">Total Lectures</p>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-green-600 mb-2">142</div>
-            <p className="text-gray-600">Completed</p>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-red-600 mb-2">8</div>
-            <p className="text-gray-600">Missed</p>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-yellow-600 mb-2">6</div>
-            <p className="text-gray-600">Rescheduled</p>
-          </div>
+  if (loading && overview.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+          <p className="mt-2 text-gray-600">Loading lecture tracking data...</p>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (error && overview.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+        <button
+          onClick={fetchLectureData}
+          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Lecture Tracking</h1>
-        <p className="text-gray-600">Monitor lecture assignments and daily progress</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Lecture Tracking</h1>
+          <p className="text-sm sm:text-base text-gray-600">Monitor lecture assignments and activity</p>
+        </div>
+        <button
+          onClick={fetchLectureData}
+          disabled={loading}
+          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center space-x-2 self-start sm:self-auto"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
+        </button>
       </div>
 
       {/* Tab Navigation */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
+          <nav className="flex space-x-4 sm:space-x-8 px-4 sm:px-6">
             {[
               { id: 'assignments', label: 'Assignments', icon: BookOpen },
-              { id: 'daily', label: 'Daily Tracking', icon: Calendar },
-              { id: 'monthly', label: 'Monthly View', icon: TrendingUp }
+              { id: 'activity', label: 'Recent Activity', icon: Calendar }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -338,38 +329,34 @@ const LectureTracking: React.FC = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <tab.icon className="w-5 h-5" />
-                <span>{tab.label}</span>
+                <tab.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.id === 'assignments' ? 'Assign' : 'Activity'}</span>
               </button>
             ))}
           </nav>
         </div>
 
         {/* Search Bar */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-4 sm:p-6 border-b border-gray-200">
           <div className="flex items-center space-x-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search by teacher, subject, or batch..."
+                placeholder={activeTab === 'assignments' ? "Search by teacher, subject, or batch..." : "Search by batch, subject, or lecture..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
             </div>
-            <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <Filter className="w-5 h-5 text-gray-500" />
-              <span className="text-gray-700">Filter</span>
-            </button>
           </div>
         </div>
       </div>
 
       {/* Tab Content */}
       {activeTab === 'assignments' && renderAssignmentsTab()}
-      {activeTab === 'daily' && renderDailyTab()}
-      {activeTab === 'monthly' && renderMonthlyTab()}
+      {activeTab === 'activity' && renderActivityTab()}
     </div>
   );
 };

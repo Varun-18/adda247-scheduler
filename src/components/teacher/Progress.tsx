@@ -285,66 +285,6 @@ const Progress: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Achievements */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Teaching Achievements</h2>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {achievements.map((achievement, index) => (
-                <div key={index} className="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg">
-                  <div className={`p-2 rounded-lg ${achievement.color}`}>
-                    <achievement.icon className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{achievement.title}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{achievement.description}</p>
-                    <p className="text-xs text-gray-500 mt-2">
-                      {new Date(achievement.date).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Performance Insights */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Teaching Insights</h2>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600 mb-2">
-                  {analytics?.completionRate && analytics.completionRate >= 80 ? 'Excellent' : 
-                   analytics?.completionRate && analytics.completionRate >= 60 ? 'Good' : 'Improving'}
-                </div>
-                <p className="text-sm text-gray-600">
-                  Your completion rate is {analytics?.completionRate ? 
-                    (analytics.completionRate >= 80 ? 'above average' : 
-                     analytics.completionRate >= 60 ? 'on track' : 'showing progress') : 'being calculated'}
-                </p>
-              </div>
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600 mb-2">Consistent</div>
-                <p className="text-sm text-gray-600">
-                  Managing {analytics?.assignedBatches || 0} batches effectively
-                </p>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600 mb-2">Active</div>
-                <p className="text-sm text-gray-600">
-                  {analytics?.completedLectures || 0} lectures completed successfully
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

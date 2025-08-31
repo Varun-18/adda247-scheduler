@@ -58,6 +58,53 @@ export interface FacultyBatch {
   }[];
 }
 
+// Business Analytics Interfaces
+export interface BusinessOverviewItem {
+  batchName: string;
+  subjectTitle: string;
+  totalLectures: number;
+  completedLectures: number;
+  lastLecture: string | null;
+  faculty: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  batchId: string;
+  subjectId: string;
+  facultyId: string;
+  remainingLectures: number;
+  completionRate: number;
+}
+
+export interface BusinessActivity {
+  batchId: string;
+  batchName: string;
+  subjectId: string;
+  subjectTitle: string;
+  facultyId: string;
+  topicId: string;
+  topicTitle: string;
+  lectureId: string;
+  lectureTitle: string;
+  completedAt: string;
+}
+
+export interface BusinessAnalytics {
+  totalTeachers: number;
+  activeBatches: number;
+  activeCourses: number;
+  batchCompletion: {
+    _id: string;
+    batchName: string;
+    totalLectures: number;
+    completedLectures: number;
+    batchId: string;
+    completionRate: number;
+  }[];
+}
+
 export interface MarkLectureCompletedPayload {
   batchId: string;
   subjectId: string;
@@ -538,6 +585,19 @@ class ApiService {
 
   async getFacultyProgress(): Promise<ApiResponse<FacultyProgressBatch[]>> {
     return this.request<FacultyProgressBatch[]>("/batch/faculty/progress");
+  }
+
+  // Business Analytics APIs
+  async getBusinessOverview(): Promise<ApiResponse<BusinessOverviewItem[]>> {
+    return this.request<BusinessOverviewItem[]>("/batch/business/overview");
+  }
+
+  async getBusinessActivity(): Promise<ApiResponse<BusinessActivity[]>> {
+    return this.request<BusinessActivity[]>("/batch/business/activity");
+  }
+
+  async getBusinessAnalytics(): Promise<ApiResponse<BusinessAnalytics>> {
+    return this.request<BusinessAnalytics>("/batch/business/analytics");
   }
 }
 

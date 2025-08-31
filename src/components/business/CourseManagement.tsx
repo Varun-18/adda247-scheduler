@@ -297,16 +297,6 @@ const CourseManagement: React.FC = () => {
             <option value="title-desc">Title Z-A</option>
             <option value="status-asc">Status A-Z</option>
           </select>
-          <select
-            value={itemsPerPage}
-            onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-          >
-            <option value={5}>5 per page</option>
-            <option value={10}>10 per page</option>
-            <option value={20}>20 per page</option>
-            <option value={50}>50 per page</option>
-          </select>
         </div>
 
         {/* Results Info */}

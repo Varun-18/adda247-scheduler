@@ -209,16 +209,6 @@ const TeacherManagement: React.FC = () => {
             <option value="firstName-asc">Name A-Z</option>
             <option value="firstName-desc">Name Z-A</option>
           </select>
-          <select
-            value={itemsPerPage}
-            onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-          >
-            <option value={6}>6 per page</option>
-            <option value={12}>12 per page</option>
-            <option value={24}>24 per page</option>
-            <option value={48}>48 per page</option>
-          </select>
         </div>
 
         {/* Results Info */}

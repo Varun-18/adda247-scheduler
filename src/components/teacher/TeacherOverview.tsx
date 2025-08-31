@@ -248,34 +248,6 @@ const TeacherOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* Progress Overview */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Teaching Performance</h2>
-        </div>
-        <div className="p-4 sm:p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-3xl font-bold text-green-600 mb-2">
-                {Math.round(analytics?.completionRate || 0)}%
-              </div>
-              <p className="text-sm text-gray-600">Overall Completion Rate</p>
-            </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-3xl font-bold text-blue-600 mb-2">
-                {analytics?.assignedBatches || 0}
-              </div>
-              <p className="text-sm text-gray-600">Active Batches</p>
-            </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <div className="text-3xl font-bold text-purple-600 mb-2">
-                {analytics ? analytics.totalLectures - analytics.completedLectures : 0}
-              </div>
-              <p className="text-sm text-gray-600">Remaining Lectures</p>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
