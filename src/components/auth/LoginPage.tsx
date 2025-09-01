@@ -32,13 +32,13 @@ const LoginPage: React.FC = () => {
     {
       email: "varunshah735@gmail.com",
       password: "Dev@1234",
-      role: "Business User"
+      role: "Business User",
     },
-    { 
-      email: "faculty@gmail.com", 
-      password: "Faculty@1234", 
-      role: "Faculty" 
-    }
+    {
+      email: "faculty@gmail.com",
+      password: "Faculty@1234",
+      role: "Faculty",
+    },
   ];
 
   return (
@@ -132,7 +132,7 @@ const LoginPage: React.FC = () => {
           </form>
 
           {/* Demo Credentials */}
-          <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
+          {/* <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
             <h3 className="text-sm font-medium text-gray-700 mb-3">
               Demo Credentials:
             </h3>
@@ -155,7 +155,7 @@ const LoginPage: React.FC = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
