@@ -32,38 +32,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      // Try to get current user details
-      apiService.getCurrentUser()
-        .then(response => {
-          if (response.success) {
-            const apiUser = response.data;
-            const user: User = {
-              id: apiUser._id,
-              name: `${apiUser.firstName} ${apiUser.lastName}`,
-              email: apiUser.email,
-              role: apiUser.role === "faculty" ? "faculty" : "business"
-            };
-            setUser(user);
-            setIsAuthenticated(true);
-          }
-        })
-        .catch(() => {
-          // Token might be invalid, clear it
-          localStorage.removeItem("token");
-        });
-    }
+    // Try to get current user details (cookie will be sent automatically)
+    apiService.getCurrentUser()
+      .then(response => {
+        if (response.success) {
+          const apiUser = response.data;
+          const user: User = {
+            id: apiUser._id,
+            name: `${apiUser.firstName} ${apiUser.lastName}`,
+            email: apiUser.email,
+            role: apiUser.role === "faculty" ? "faculty" : "business"
+          };
+          setUser(user);
+          setIsAuthenticated(true);
+        }
+      })
+      .catch(() => {
+        // User not authenticated or token expired
+        console.log("User not authenticated");
+      });
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       const response = await apiService.login({ email, password });
 
-      if (response.success && response.data && response.token) {
-        // Store token in localStorage instead of relying on cookies
-        localStorage.setItem("token", response.token);
-        
+      if (response.success && response.token) {
         // Get user details
         const userResponse = await apiService.getCurrentUser();
         if (userResponse.success) {
@@ -81,8 +75,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } catch (error) {
       console.error("Login failed:", error);
-      // Clear any stored token on login failure
-      localStorage.removeItem("token");
     }
 
     return false;
@@ -91,7 +83,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem("token");
+    // You might want to call a logout API endpoint here to clear the cookie on the server
+    // For now, we'll just clear the user state
   };
 
   return (

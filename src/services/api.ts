@@ -130,7 +130,7 @@ export interface LoginResponse {
   success: boolean;
   message: string;
   statusCode: number;
-  token: string;
+  token?: string;
 }
 
 export interface User {
@@ -345,13 +345,9 @@ class ApiService {
       "Content-Type": "application/json",
     };
 
-    const token = localStorage.getItem("token");
-    if (token) {
-      defaultHeaders["Authorization"] = `Bearer ${token}`;
-    }
-
     const config: RequestInit = {
       ...options,
+      credentials: 'include', // This ensures cookies are sent with requests
       headers: {
         ...defaultHeaders,
         ...options.headers,
