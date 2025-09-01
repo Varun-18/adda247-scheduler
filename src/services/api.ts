@@ -347,12 +347,11 @@ class ApiService {
 
     const token = localStorage.getItem("token");
     if (token) {
-      this.setCookie(token);
+      defaultHeaders["Authorization"] = `Bearer ${token}`;
     }
 
     const config: RequestInit = {
       ...options,
-      credentials: "include",
       headers: {
         ...defaultHeaders,
         ...options.headers,
@@ -372,12 +371,6 @@ class ApiService {
       console.error("API request failed:", error);
       throw error;
     }
-  }
-
-  private setCookie(value: string): void {
-    if (typeof document === "undefined") return;
-
-    document.cookie = `token=${value}; path=/`;
   }
 
   // Auth APIs

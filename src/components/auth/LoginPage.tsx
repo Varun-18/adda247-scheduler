@@ -51,7 +51,7 @@ const LoginPage: React.FC = () => {
               <img
                 src={Logo}
                 alt="EduTracker Logo"
-                className="w-12 h-12 sm:w-[50%] sm:h-16 object-contain"
+                className="w-16 h-16 sm:w-24 sm:h-20 object-contain"
               />
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">

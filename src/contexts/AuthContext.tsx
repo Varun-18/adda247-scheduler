@@ -60,7 +60,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const response = await apiService.login({ email, password });
 
-      if (response.success && response.token) {
+      if (response.success && response.data && response.token) {
+        // Store token in localStorage instead of relying on cookies
         localStorage.setItem("token", response.token);
         
         // Get user details
@@ -80,6 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } catch (error) {
       console.error("Login failed:", error);
+      // Clear any stored token on login failure
+      localStorage.removeItem("token");
     }
 
     return false;
