@@ -131,6 +131,7 @@ export interface LoginResponse {
   message: string;
   statusCode: number;
   token?: string;
+  data?: any;
 }
 
 export interface User {
@@ -335,6 +336,18 @@ export interface CreateBatchPayload {
 }
 
 class ApiService {
+  private getAuthToken(): string | null {
+    return localStorage.getItem('authToken');
+  }
+
+  private setAuthToken(token: string): void {
+    localStorage.setItem('authToken', token);
+  }
+
+  private removeAuthToken(): void {
+    localStorage.removeItem('authToken');
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -345,9 +358,14 @@ class ApiService {
       "Content-Type": "application/json",
     };
 
+    // Add Authorization header if token exists
+    const token = this.getAuthToken();
+    if (token) {
+      defaultHeaders['Authorization'] = `Bearer ${token}`;
+    }
+
     const config: RequestInit = {
       ...options,
-      credentials: 'include', // This ensures cookies are sent with requests
       headers: {
         ...defaultHeaders,
         ...options.headers,
@@ -358,6 +376,11 @@ class ApiService {
       const response = await fetch(url, config);
 
       if (!response.ok) {
+        // If unauthorized, remove token and redirect to login
+        if (response.status === 401 || response.status === 403) {
+          this.removeAuthToken();
+          // You might want to trigger a logout here
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -370,11 +393,22 @@ class ApiService {
   }
 
   // Auth APIs
-  async login(payload: LoginPayload): Promise<ApiResponse<null>> {
-    return this.request<null>("/user/login", {
+  async login(payload: LoginPayload): Promise<ApiResponse<any>> {
+    const response = await this.request<any>("/user/login", {
       method: "POST",
       body: JSON.stringify(payload),
     });
+    
+    // Store the token if login is successful
+    if (response.success && response.token) {
+      this.setAuthToken(response.token);
+    }
+    
+    return response;
+  }
+
+  async logout(): Promise<void> {
+    this.removeAuthToken();
   }
 
   // User APIs

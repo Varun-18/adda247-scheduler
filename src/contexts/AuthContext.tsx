@@ -32,25 +32,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Try to get current user details (cookie will be sent automatically)
-    apiService.getCurrentUser()
-      .then(response => {
-        if (response.success) {
-          const apiUser = response.data;
-          const user: User = {
-            id: apiUser._id,
-            name: `${apiUser.firstName} ${apiUser.lastName}`,
-            email: apiUser.email,
-            role: apiUser.role === "faculty" ? "faculty" : "business"
-          };
-          setUser(user);
-          setIsAuthenticated(true);
-        }
-      })
-      .catch(() => {
-        // User not authenticated or token expired
-        console.log("User not authenticated");
-      });
+    // Check if token exists in localStorage
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      // Try to get current user details with the stored token
+      apiService.getCurrentUser()
+        .then(response => {
+          if (response.success) {
+            const apiUser = response.data;
+            const user: User = {
+              id: apiUser._id,
+              name: `${apiUser.firstName} ${apiUser.lastName}`,
+              email: apiUser.email,
+              role: apiUser.role === "faculty" ? "faculty" : "business"
+            };
+            setUser(user);
+            setIsAuthenticated(true);
+          }
+        })
+        .catch(() => {
+          // Token is invalid or expired, remove it
+          localStorage.removeItem('authToken');
+          console.log("User not authenticated or token expired");
+        });
+    }
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -81,10 +86,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = () => {
+    // Call API service logout to remove token
+    apiService.logout();
     setUser(null);
     setIsAuthenticated(false);
-    // You might want to call a logout API endpoint here to clear the cookie on the server
-    // For now, we'll just clear the user state
   };
 
   return (
