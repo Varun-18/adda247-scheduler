@@ -34,15 +34,15 @@ const Header: React.FC<HeaderProps> = ({ setShowMenu, showMenu }) => {
 
         <div className="flex items-center space-x-2 sm:space-x-4">
           {/* Notifications */}
-          <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
+          {/* <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
             <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          </button> */}
 
           {/* Settings - Hidden on mobile */}
-          <button className="hidden sm:block p-2 text-gray-400 hover:text-gray-600 transition-colors">
+          {/* <button className="hidden sm:block p-2 text-gray-400 hover:text-gray-600 transition-colors">
             <Settings className="w-6 h-6" />
-          </button>
+          </button> */}
 
           {/* User Profile */}
           <div className="flex items-center space-x-2 sm:space-x-3">
@@ -51,9 +51,9 @@ const Header: React.FC<HeaderProps> = ({ setShowMenu, showMenu }) => {
               alt={user?.name}
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover"
             /> */}
-            <span className="text-sm font-medium text-gray-700 hidden sm:inline-block truncate max-w-24">
+            {/* <span className="text-sm font-medium text-gray-700 hidden sm:inline-block truncate max-w-24">
               {user?.name}
-            </span>
+            </span> */}
           </div>
 
           {/* Logout */}

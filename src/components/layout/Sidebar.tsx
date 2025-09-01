@@ -76,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ showMenu, setShowMenu }) => {
         <img
           src={Logo}
           alt="EduTracker Logo"
-          className="w-10 h-10 sm:w-32 lg:w-40 sm:h-12 lg:h-16 object-contain"
+          className="w-24 h-10 sm:w-32 lg:w-40 sm:h-12 lg:h-16 object-contain"
         />
         <button
           onClick={() => setShowMenu(false)}
