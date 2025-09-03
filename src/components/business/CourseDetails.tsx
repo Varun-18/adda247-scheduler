@@ -765,12 +765,12 @@ const CourseDetails: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Estimated Hours</label>
                   <input
                     type="number"
-                    min="0.5"
-                    step="0.5"
+                   min="1"
+                   step="1"
                     value={topicForm.estimatedHours}
-                    onChange={(e) => setTopicForm({ ...topicForm, estimatedHours: parseFloat(e.target.value) })}
+                   onChange={(e) => setTopicForm({ ...topicForm, estimatedHours: parseInt(e.target.value) || 1 })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                    placeholder="1.0"
+                   placeholder="1"
                     required
                   />
                 </div>

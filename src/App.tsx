@@ -9,6 +9,7 @@ import CourseDetails from './components/business/CourseDetails';
 import BatchDetails from './components/business/BatchDetails';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
+import Footer from './components/layout/Footer';
 
 function AppContent() {
   const { user, isAuthenticated } = useAuth();
@@ -71,6 +72,7 @@ function AppContent() {
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </main>
+          <Footer />
         </div>
       </div>
       <Toaster />
