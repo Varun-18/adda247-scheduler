@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Edit, Trash2, ChevronDown, ChevronRight, BookOpen, Clock, Play } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Course, Subject, Topic, Lecture, apiService, AddSubjectPayload, AddTopicPayload, AddLecturePayload, UpdateSubjectPayload, UpdateTopicPayload, UpdateLecturePayload } from '../../services/api';
+import { Course, Subject, Topic, Lecture, apiService, AddSubjectPayload, AddTopicPayload, AddLecturePayload, UpdateSubjectPayload, UpdateTopicPayload, UpdateLecturePayload, DeleteSubjectPayload, DeleteTopicPayload, DeleteLecturePayload } from '../../services/api';
 import { showToast, handleApiError } from '../../utils/toast';
 
 const CourseDetails: React.FC = () => {
@@ -20,6 +20,15 @@ const CourseDetails: React.FC = () => {
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
   const [editingLecture, setEditingLecture] = useState<Lecture | null>(null);
+
+  // Delete confirmation states
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteType, setDeleteType] = useState<'subject' | 'topic' | 'lecture' | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{
+    subject?: Subject;
+    topic?: Topic;
+    lecture?: Lecture;
+  }>({});
 
   // Form states
   const [subjectForm, setSubjectForm] = useState({
@@ -324,6 +333,127 @@ const CourseDetails: React.FC = () => {
     }
   };
 
+  const handleDeleteSubject = async () => {
+    if (!course || !itemToDelete.subject) return;
+
+    try {
+      setLoading(true);
+      const payload: DeleteSubjectPayload = {
+        courseId: course._id,
+        subjectId: itemToDelete.subject._id,
+      };
+
+      const response = await apiService.deleteSubject(payload);
+      if (response.success) {
+        showToast.success('Subject deleted successfully');
+        setShowDeleteModal(false);
+        resetDeleteState();
+        fetchCourseDetails(); // Revalidate data
+      } else {
+        showToast.error('Failed to delete subject');
+      }
+    } catch (error) {
+      handleApiError(error, 'Failed to delete subject');
+      console.error('Error deleting subject:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTopic = async () => {
+    if (!course || !itemToDelete.subject || !itemToDelete.topic) return;
+
+    try {
+      setLoading(true);
+      const payload: DeleteTopicPayload = {
+        courseId: course._id,
+        subjectId: itemToDelete.subject._id,
+        topicId: itemToDelete.topic._id,
+      };
+
+      const response = await apiService.deleteTopic(payload);
+      if (response.success) {
+        showToast.success('Topic deleted successfully');
+        setShowDeleteModal(false);
+        resetDeleteState();
+        fetchCourseDetails(); // Revalidate data
+      } else {
+        showToast.error('Failed to delete topic');
+      }
+    } catch (error) {
+      handleApiError(error, 'Failed to delete topic');
+      console.error('Error deleting topic:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteLecture = async () => {
+    if (!course || !itemToDelete.subject || !itemToDelete.topic || !itemToDelete.lecture) return;
+
+    try {
+      setLoading(true);
+      const payload: DeleteLecturePayload = {
+        courseId: course._id,
+        subjectId: itemToDelete.subject._id,
+        topicId: itemToDelete.topic._id,
+        lectureId: itemToDelete.lecture._id,
+      };
+
+      const response = await apiService.deleteLecture(payload);
+      if (response.success) {
+        showToast.success('Lecture deleted successfully');
+        setShowDeleteModal(false);
+        resetDeleteState();
+        fetchCourseDetails(); // Revalidate data
+      } else {
+        showToast.error('Failed to delete lecture');
+      }
+    } catch (error) {
+      handleApiError(error, 'Failed to delete lecture');
+      console.error('Error deleting lecture:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmDelete = (type: 'subject' | 'topic' | 'lecture', subject: Subject, topic?: Topic, lecture?: Lecture) => {
+    setDeleteType(type);
+    setItemToDelete({ subject, topic, lecture });
+    setShowDeleteModal(true);
+  };
+
+  const resetDeleteState = () => {
+    setDeleteType(null);
+    setItemToDelete({});
+  };
+
+  const executeDelete = () => {
+    switch (deleteType) {
+      case 'subject':
+        return handleDeleteSubject();
+      case 'topic':
+        return handleDeleteTopic();
+      case 'lecture':
+        return handleDeleteLecture();
+      default:
+        return Promise.resolve();
+    }
+  };
+
+  const getDeleteMessage = () => {
+    switch (deleteType) {
+      case 'subject':
+        return `Are you sure you want to delete the subject "${itemToDelete.subject?.title}"? This will also delete all topics and lectures within this subject.`;
+      case 'topic':
+        return `Are you sure you want to delete the topic "${itemToDelete.topic?.title}"? This will also delete all lectures within this topic.`;
+      case 'lecture':
+        return `Are you sure you want to delete the lecture "${itemToDelete.lecture?.title}"?`;
+      default:
+        return 'Are you sure you want to delete this item?';
+    }
+  };
+
   const openAddTopicModal = (subject: Subject) => {
     setSelectedSubject(subject);
     setTopicForm({ ...topicForm, order: subject.topics.length + 1, estimatedHours: 1 });
@@ -524,7 +654,10 @@ const CourseDetails: React.FC = () => {
                         >
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button className="p-1 text-gray-400 hover:text-red-600">
+                        <button 
+                          onClick={() => confirmDelete('subject', subject)}
+                          className="p-1 text-gray-400 hover:text-red-600"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -592,7 +725,10 @@ const CourseDetails: React.FC = () => {
                                     >
                                       <Edit className="w-4 h-4" />
                                     </button>
-                                    <button className="p-1 text-gray-400 hover:text-red-600">
+                                    <button 
+                                      onClick={() => confirmDelete('topic', subject, topic)}
+                                      className="p-1 text-gray-400 hover:text-red-600"
+                                    >
                                       <Trash2 className="w-4 h-4" />
                                     </button>
                                   </div>
@@ -631,7 +767,10 @@ const CourseDetails: React.FC = () => {
                                             >
                                               <Edit className="w-3 h-3" />
                                             </button>
-                                            <button className="p-1 text-gray-400 hover:text-red-600">
+                                            <button 
+                                              onClick={() => confirmDelete('lecture', subject, topic, lecture)}
+                                              className="p-1 text-gray-400 hover:text-red-600"
+                                            >
                                               <Trash2 className="w-3 h-3" />
                                             </button>
                                           </div>
@@ -871,6 +1010,39 @@ const CourseDetails: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Delete {deleteType?.charAt(0).toUpperCase() + deleteType?.slice(1)}
+            </h2>
+            <p className="text-gray-600 mb-6">
+              {getDeleteMessage()}
+            </p>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={executeDelete}
+                disabled={loading}
+                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Deleting...' : `Delete ${deleteType?.charAt(0).toUpperCase() + deleteType?.slice(1)}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  resetDeleteState();
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -17,6 +17,7 @@ import {
   Course,
   CreateCoursePayload,
   UpdateCoursePayload,
+  DeleteCoursePayload,
   PaginationParams,
 } from "../../services/api";
 import { showToast, handleApiError } from "../../utils/toast";
@@ -38,6 +39,10 @@ const CourseManagement: React.FC = () => {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [statusFilter, setStatusFilter] = useState("");
+
+  // Delete confirmation state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -211,6 +216,37 @@ const CourseManagement: React.FC = () => {
     setCurrentPage(1); // Reset to first page
   };
 
+  const handleDeleteCourse = async () => {
+    if (!courseToDelete) return;
+
+    try {
+      setLoading(true);
+      const payload: DeleteCoursePayload = {
+        courseId: courseToDelete._id,
+      };
+
+      const response = await apiService.deleteCourse(payload);
+      if (response.success) {
+        showToast.success('Course deleted successfully');
+        setShowDeleteModal(false);
+        setCourseToDelete(null);
+        fetchCourses(); // Revalidate data
+      } else {
+        showToast.error('Failed to delete course');
+      }
+    } catch (error) {
+      handleApiError(error, 'Failed to delete course');
+      console.error("Error deleting course:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmDeleteCourse = (course: Course) => {
+    setCourseToDelete(course);
+    setShowDeleteModal(true);
+  };
+
   const handleSortChange = (field: string) => {
     if (field === sortBy) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -355,7 +391,10 @@ const CourseManagement: React.FC = () => {
                   >
                     <Edit className="w-4 h-4" />
                   </button>
-                  <button className="p-1 text-gray-400 hover:text-red-600 transition-colors">
+                  <button 
+                    onClick={() => confirmDeleteCourse(course)}
+                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -640,6 +679,39 @@ const CourseManagement: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && courseToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Delete Course
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete "{courseToDelete.title}"? This action cannot be undone.
+            </p>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={handleDeleteCourse}
+                disabled={loading}
+                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Deleting...' : 'Delete Course'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setCourseToDelete(null);
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

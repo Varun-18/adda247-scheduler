@@ -294,6 +294,32 @@ export interface UpdateLecturePayload {
   durationMinutes: number;
 }
 
+export interface DeleteCoursePayload {
+  courseId: string;
+}
+
+export interface DeleteSubjectPayload {
+  courseId: string;
+  subjectId: string;
+}
+
+export interface DeleteTopicPayload {
+  courseId: string;
+  subjectId: string;
+  topicId: string;
+}
+
+export interface DeleteLecturePayload {
+  courseId: string;
+  subjectId: string;
+  topicId: string;
+  lectureId: string;
+}
+
+export interface DeleteBatchPayload {
+  batchId: string;
+}
+
 export interface Batch {
   _id: string;
   name: string;
@@ -543,6 +569,42 @@ class ApiService {
   ): Promise<ApiResponse<any>> {
     return this.request<any>("/course/update/lecture", {
       method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Delete APIs
+  async deleteCourse(payload: DeleteCoursePayload): Promise<ApiResponse<any>> {
+    return this.request<any>("/course/delete/course", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteSubject(payload: DeleteSubjectPayload): Promise<ApiResponse<any>> {
+    return this.request<any>("/course/delete/subject", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteTopic(payload: DeleteTopicPayload): Promise<ApiResponse<any>> {
+    return this.request<any>("/course/delete/topic", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteLecture(payload: DeleteLecturePayload): Promise<ApiResponse<any>> {
+    return this.request<any>("/course/delete/lecture", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async deleteBatch(payload: DeleteBatchPayload): Promise<ApiResponse<any>> {
+    return this.request<any>("/batch/delete/batch", {
+      method: "POST",
       body: JSON.stringify(payload),
     });
   }

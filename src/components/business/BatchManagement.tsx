@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   Plus,
   Search,
-  Edit,
   Trash2,
   Calendar,
   Users,
@@ -17,6 +16,7 @@ import {
   apiService,
   Batch,
   CreateBatchPayload,
+  DeleteBatchPayload,
   Course,
   User,
   PaginationParams,
@@ -45,6 +45,10 @@ const BatchManagement: React.FC = () => {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [statusFilter, setStatusFilter] = useState("");
+
+  // Delete confirmation state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [batchToDelete, setBatchToDelete] = useState<Batch | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -190,6 +194,37 @@ const BatchManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteBatch = async () => {
+    if (!batchToDelete) return;
+
+    try {
+      setLoading(true);
+      const payload: DeleteBatchPayload = {
+        batchId: batchToDelete._id,
+      };
+
+      const response = await apiService.deleteBatch(payload);
+      if (response.success) {
+        showToast.success('Batch deleted successfully');
+        setShowDeleteModal(false);
+        setBatchToDelete(null);
+        fetchBatches(); // Revalidate data
+      } else {
+        showToast.error('Failed to delete batch');
+      }
+    } catch (error) {
+      handleApiError(error, 'Failed to delete batch');
+      console.error("Error deleting batch:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmDeleteBatch = (batch: Batch) => {
+    setBatchToDelete(batch);
+    setShowDeleteModal(true);
   };
 
   const filteredBatches = batches.filter(
@@ -360,10 +395,10 @@ const BatchManagement: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button className="p-1 text-gray-400 hover:text-blue-600 transition-colors">
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button className="p-1 text-gray-400 hover:text-red-600 transition-colors">
+                    <button 
+                      onClick={() => confirmDeleteBatch(batch)}
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -642,6 +677,39 @@ const BatchManagement: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && batchToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Delete Batch
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete "{batchToDelete.name}"? This action cannot be undone and will remove all associated data.
+            </p>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={handleDeleteBatch}
+                disabled={loading}
+                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Deleting...' : 'Delete Batch'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setBatchToDelete(null);
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
