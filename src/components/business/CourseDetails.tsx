@@ -565,9 +565,14 @@ const CourseDetails: React.FC = () => {
                                         {subjectIndex + 1}.{topicIndex + 1} {topic.title}
                                       </h4>
                                       <p className="text-sm text-gray-600">{topic.description}</p>
-                                      <p className="text-xs text-gray-500">
-                                        Estimated: {topic.estimatedHours} hours
-                                      </p>
+                                      <div className="flex items-center justify-between mt-1">
+                                        <p className="text-xs text-gray-500">
+                                          Estimated: {topic.estimatedHours} hours
+                                        </p>
+                                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                          {topic.lectures.length} lectures
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
                                   <div className="flex items-center space-x-2">
