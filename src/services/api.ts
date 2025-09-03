@@ -263,6 +263,7 @@ export interface AddTopicPayload {
   title: string;
   description: string;
   order: number;
+  estimatedHours: number;
 }
 
 export interface UpdateTopicPayload {
@@ -271,7 +272,7 @@ export interface UpdateTopicPayload {
   topicId: string;
   title: string;
   description: string;
-  estimatedHours?: number;
+  estimatedHours: number;
 }
 
 export interface AddLecturePayload {

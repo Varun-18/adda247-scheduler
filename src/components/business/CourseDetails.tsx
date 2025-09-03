@@ -31,7 +31,8 @@ const CourseDetails: React.FC = () => {
   const [topicForm, setTopicForm] = useState({
     title: '',
     description: '',
-    order: 1
+    order: 1,
+    estimatedHours: 1
   });
 
   const [lectureForm, setLectureForm] = useState({
@@ -42,7 +43,7 @@ const CourseDetails: React.FC = () => {
 
   const resetForms = () => {
     setSubjectForm({ title: '', description: '', order: 1 });
-    setTopicForm({ title: '', description: '', order: 1 });
+    setTopicForm({ title: '', description: '', order: 1, estimatedHours: 1 });
     setLectureForm({ title: '', description: '', order: 1 });
     setEditingSubject(null);
     setEditingTopic(null);
@@ -174,7 +175,8 @@ const CourseDetails: React.FC = () => {
     setTopicForm({
       title: topic.title,
       description: topic.description,
-      order: topic.order
+      order: topic.order,
+      estimatedHours: topic.estimatedHours
     });
     setShowAddTopicModal(true);
   };
@@ -191,7 +193,7 @@ const CourseDetails: React.FC = () => {
         topicId: editingTopic._id,
         title: topicForm.title,
         description: topicForm.description,
-        estimatedHours: 1 // Default value
+        estimatedHours: topicForm.estimatedHours
       };
 
       const response = await apiService.updateTopic(payload);
@@ -267,14 +269,15 @@ const CourseDetails: React.FC = () => {
         subjectId: selectedSubject._id,
         title: topicForm.title,
         description: topicForm.description,
-        order: topicForm.order
+        order: topicForm.order,
+        estimatedHours: topicForm.estimatedHours
       };
 
       const response = await apiService.addTopic(payload);
       if (response.success) {
         showToast.success('Topic added successfully');
         setShowAddTopicModal(false);
-        setTopicForm({ title: '', description: '', order: 1 });
+        setTopicForm({ title: '', description: '', order: 1, estimatedHours: 1 });
         resetForms();
         fetchCourseDetails(); // Revalidate data
       } else {
@@ -323,7 +326,7 @@ const CourseDetails: React.FC = () => {
 
   const openAddTopicModal = (subject: Subject) => {
     setSelectedSubject(subject);
-    setTopicForm({ ...topicForm, order: subject.topics.length + 1 });
+    setTopicForm({ ...topicForm, order: subject.topics.length + 1, estimatedHours: 1 });
     setShowAddTopicModal(true);
   };
 
@@ -741,7 +744,33 @@ const CourseDetails: React.FC = () => {
                   required
                 />
               </div>
-              <div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Order</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={topicForm.order}
+                    onChange={(e) => setTopicForm({ ...topicForm, order: parseInt(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Estimated Hours</label>
+                  <input
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    value={topicForm.estimatedHours}
+                    onChange={(e) => setTopicForm({ ...topicForm, estimatedHours: parseFloat(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    placeholder="1.0"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="hidden">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Order</label>
                 <input
                   type="number"
