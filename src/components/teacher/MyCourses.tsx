@@ -51,18 +51,18 @@ const MyCourses: React.FC = () => {
   );
 
   const handleMarkLectureCompleted = async (
-    batchId: string,
-    subjectId: string,
-    topicId: string,
-    lectureId: string
+    batch: FacultyBatch,
+    subject: any,
+    topic: any,
+    lecture: any
   ) => {
     try {
-      setCompletingLecture(lectureId);
+      setCompletingLecture(lecture.lectureId);
       const response = await apiService.markLectureCompleted({
-        batchId,
-        subjectId,
-        topicId,
-        lectureId,
+        batchId: batch._id,
+        subjectId: subject.subjectId,
+        topicId: topic.topicId,
+        lectureId: lecture.lectureId,
       });
 
       if (response.success) {
@@ -71,72 +71,72 @@ const MyCourses: React.FC = () => {
         // Update the local state immediately for better UX
         setBatches(prevBatches => 
           prevBatches.map(batch => {
-            if (batch._id === batchId) {
+            if (batchItem._id === batch._id) {
               return {
-                ...batch,
-                subjects: batch.subjects.map(subject => {
-                  if (subject.subjectId === subjectId) {
+                ...batchItem,
+                subjects: batchItem.subjects.map(subjectItem => {
+                  if (subjectItem.subjectId === subject.subjectId) {
                     return {
-                      ...subject,
-                      topics: subject.topics.map(topic => {
-                        if (topic.topicId === topicId) {
+                      ...subjectItem,
+                      topics: subjectItem.topics.map(topicItem => {
+                        if (topicItem.topicId === topic.topicId) {
                           return {
-                            ...topic,
-                            lectures: topic.lectures.map(lecture => {
-                              if (lecture.lectureId === lectureId) {
+                            ...topicItem,
+                            lectures: topicItem.lectures.map(lectureItem => {
+                              if (lectureItem.lectureId === lecture.lectureId) {
                                 return {
-                                  ...lecture,
+                                  ...lectureItem,
                                   completedAt: new Date().toISOString(),
                                   completedBy: 'current-user'
                                 };
                               }
-                              return lecture;
+                              return lectureItem;
                             })
                           };
                         }
-                        return topic;
+                        return topicItem;
                       })
                     };
                   }
-                  return subject;
+                  return subjectItem;
                 })
               };
             }
-            return batch;
+            return batchItem;
           })
         );
         
         // Update selectedBatch if it's the current batch being viewed
-        if (selectedBatch && selectedBatch._id === batchId) {
+        if (selectedBatch && selectedBatch._id === batch._id) {
           setSelectedBatch(prevSelected => {
             if (!prevSelected) return null;
             return {
               ...prevSelected,
-              subjects: prevSelected.subjects.map(subject => {
-                if (subject.subjectId === subjectId) {
+              subjects: prevSelected.subjects.map(subjectItem => {
+                if (subjectItem.subjectId === subject.subjectId) {
                   return {
-                    ...subject,
-                    topics: subject.topics.map(topic => {
-                      if (topic.topicId === topicId) {
+                    ...subjectItem,
+                    topics: subjectItem.topics.map(topicItem => {
+                      if (topicItem.topicId === topic.topicId) {
                         return {
-                          ...topic,
-                          lectures: topic.lectures.map(lecture => {
-                            if (lecture.lectureId === lectureId) {
+                          ...topicItem,
+                          lectures: topicItem.lectures.map(lectureItem => {
+                            if (lectureItem.lectureId === lecture.lectureId) {
                               return {
-                                ...lecture,
+                                ...lectureItem,
                                 completedAt: new Date().toISOString(),
                                 completedBy: 'current-user'
                               };
                             }
-                            return lecture;
+                            return lectureItem;
                           })
                         };
                       }
-                      return topic;
+                      return topicItem;
                     })
                   };
                 }
-                return subject;
+                return subjectItem;
               })
             };
           });
@@ -144,7 +144,12 @@ const MyCourses: React.FC = () => {
         
         // Dispatch custom event to notify other components
         window.dispatchEvent(new CustomEvent('lectureCompleted', {
-          detail: { batchId, subjectId, topicId, lectureId }
+          detail: { 
+            batchId: batch._id, 
+            subjectId: subject.subjectId, 
+            topicId: topic.topicId, 
+            lectureId: lecture.lectureId 
+          }
         }));
         
         // Also fetch fresh data to ensure consistency
@@ -268,10 +273,10 @@ const MyCourses: React.FC = () => {
                                   <button
                                     onClick={() =>
                                       handleMarkLectureCompleted(
-                                        selectedBatch._id,
-                                        subject.subjectId,
-                                        topic.topicId,
-                                        lecture.lectureId
+                                        selectedBatch,
+                                        subject,
+                                        topic,
+                                        lecture
                                       )
                                     }
                                     disabled={completingLecture === lecture.lectureId}
