@@ -403,12 +403,30 @@ class ApiService {
       const response = await fetch(url, config);
 
       if (!response.ok) {
-        // If unauthorized, remove token and redirect to login
+        // Handle authentication errors
         if (response.status === 401 || response.status === 403) {
           this.removeAuthToken();
-          // You might want to trigger a logout here
+          // Create a custom error with auth flag
+          const authError = new Error('Authentication required');
+          (authError as any).isAuthError = true;
+          (authError as any).status = response.status;
+          throw authError;
         }
-        throw new Error(`HTTP error! status: ${response.status}`);
+        
+        // Try to get error message from response
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (e) {
+          // If we can't parse the error response, use the default message
+        }
+        
+        const error = new Error(errorMessage);
+        (error as any).status = response.status;
+        throw error;
       }
 
       const data = await response.json();

@@ -81,6 +81,11 @@ const MyLectures: React.FC = () => {
       handleApiError(error, 'Failed to mark lecture as completed');
       console.error("Error marking lecture as completed:", error);
       
+      // If it's an auth error, don't refresh data as user needs to login
+      if (error?.isAuthError || error?.status === 401 || error?.status === 403) {
+        return;
+      }
+      
       // If there's an error, refresh the data to ensure UI consistency
       fetchFacultyLectures();
     } finally {

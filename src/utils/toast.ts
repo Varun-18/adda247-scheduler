@@ -35,6 +35,12 @@ export const showToast = {
 };
 
 export const handleApiError = (error: any, defaultMessage: string = 'An error occurred') => {
+  // Check if it's an authentication error
+  if (error?.isAuthError || error?.status === 401 || error?.status === 403) {
+    showToast.error('Please login again to perform this action');
+    return;
+  }
+  
   let message = defaultMessage;
   
   if (error?.response?.data?.message) {

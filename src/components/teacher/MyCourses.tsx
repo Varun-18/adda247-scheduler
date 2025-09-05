@@ -170,6 +170,12 @@ const MyCourses: React.FC = () => {
     } catch (error) {
       handleApiError(error, "Failed to mark lecture as completed");
       console.error("Error marking lecture as completed:", error);
+      
+      // If it's an auth error, don't refresh data as user needs to login
+      if (error?.isAuthError || error?.status === 401 || error?.status === 403) {
+        return;
+      }
+      
       // Refresh data on error to ensure UI consistency
       fetchFacultySubjects();
     } finally {

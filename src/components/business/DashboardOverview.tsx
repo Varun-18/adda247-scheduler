@@ -45,6 +45,12 @@ const DashboardOverview: React.FC = () => {
 
     } catch (error) {
       handleApiError(error, 'Failed to fetch dashboard data');
+      
+      // If it's an auth error, don't set error state as user needs to login
+      if (error?.isAuthError || error?.status === 401 || error?.status === 403) {
+        return;
+      }
+      
       setError('Failed to load dashboard data');
       console.error('Error fetching dashboard data:', error);
     } finally {

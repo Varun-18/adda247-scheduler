@@ -39,6 +39,12 @@ const LectureTracking: React.FC = () => {
 
     } catch (error) {
       handleApiError(error, 'Failed to fetch lecture tracking data');
+      
+      // If it's an auth error, don't set error state as user needs to login
+      if (error?.isAuthError || error?.status === 401 || error?.status === 403) {
+        return;
+      }
+      
       setError('Failed to load lecture tracking data');
       console.error('Error fetching lecture tracking data:', error);
     } finally {

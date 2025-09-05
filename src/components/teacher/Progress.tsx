@@ -51,6 +51,12 @@ const Progress: React.FC = () => {
 
     } catch (error) {
       handleApiError(error, 'Failed to fetch progress data');
+      
+      // If it's an auth error, don't set error state as user needs to login
+      if (error?.isAuthError || error?.status === 401 || error?.status === 403) {
+        return;
+      }
+      
       setError('Failed to load progress data');
       console.error('Error fetching progress data:', error);
     } finally {
