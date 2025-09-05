@@ -75,19 +75,19 @@ const MyCourses: React.FC = () => {
               return {
                 ...batch,
                 subjects: batch.subjects.map(subject => {
-                  if (subject._id === subjectId) {
+                  if (subject.subjectId === subjectId) {
                     return {
                       ...subject,
                       topics: subject.topics.map(topic => {
-                        if (topic._id === topicId) {
+                        if (topic.topicId === topicId) {
                           return {
                             ...topic,
                             lectures: topic.lectures.map(lecture => {
-                              if (lecture._id === lectureId) {
+                              if (lecture.lectureId === lectureId) {
                                 return {
                                   ...lecture,
                                   completedAt: new Date().toISOString(),
-                                  completedBy: 'current-user' // You might want to get this from auth context
+                                  completedBy: 'current-user'
                                 };
                               }
                               return lecture;
@@ -105,6 +105,42 @@ const MyCourses: React.FC = () => {
             return batch;
           })
         );
+        
+        // Update selectedBatch if it's the current batch being viewed
+        if (selectedBatch && selectedBatch._id === batchId) {
+          setSelectedBatch(prevSelected => {
+            if (!prevSelected) return null;
+            return {
+              ...prevSelected,
+              subjects: prevSelected.subjects.map(subject => {
+                if (subject.subjectId === subjectId) {
+                  return {
+                    ...subject,
+                    topics: subject.topics.map(topic => {
+                      if (topic.topicId === topicId) {
+                        return {
+                          ...topic,
+                          lectures: topic.lectures.map(lecture => {
+                            if (lecture.lectureId === lectureId) {
+                              return {
+                                ...lecture,
+                                completedAt: new Date().toISOString(),
+                                completedBy: 'current-user'
+                              };
+                            }
+                            return lecture;
+                          })
+                        };
+                      }
+                      return topic;
+                    })
+                  };
+                }
+                return subject;
+              })
+            };
+          });
+        }
         
         // Dispatch custom event to notify other components
         window.dispatchEvent(new CustomEvent('lectureCompleted', {
@@ -186,7 +222,7 @@ const MyCourses: React.FC = () => {
             <div className="space-y-4">
               {selectedBatch.subjects.map((subject, subjectIndex) => (
                 <div
-                  key={subject._id}
+                  key={subject.subjectId}
                   className="border rounded-lg p-4 border-gray-200 hover:border-gray-300"
                 >
                   <h3 className="font-medium text-gray-900 mb-3">
@@ -196,7 +232,7 @@ const MyCourses: React.FC = () => {
                   <div className="space-y-3 ml-4">
                     {subject.topics.map((topic, topicIndex) => (
                       <div
-                        key={topic._id}
+                        key={topic.topicId}
                         className="border border-gray-100 rounded-lg p-3 bg-blue-50"
                       >
                         <h4 className="font-medium text-gray-900 mb-2">
@@ -209,7 +245,7 @@ const MyCourses: React.FC = () => {
                               lecture.completedAt && lecture.completedBy;
                             return (
                               <div
-                                key={lecture._id}
+                                key={lecture.lectureId}
                                 className="flex items-center justify-between p-2 bg-white rounded border"
                               >
                                 <div className="flex items-center space-x-2">
@@ -233,15 +269,15 @@ const MyCourses: React.FC = () => {
                                     onClick={() =>
                                       handleMarkLectureCompleted(
                                         selectedBatch._id,
-                                        subject._id,
-                                        topic._id,
-                                        lecture._id
+                                        subject.subjectId,
+                                        topic.topicId,
+                                        lecture.lectureId
                                       )
                                     }
-                                    disabled={completingLecture === lecture._id}
+                                    disabled={completingLecture === lecture.lectureId}
                                     className="text-xs text-red-600 hover:text-red-800 font-medium"
                                   >
-                                    {completingLecture === lecture._id
+                                    {completingLecture === lecture.lectureId
                                       ? "Marking..."
                                       : "Mark as Completed"}
                                   </button>
