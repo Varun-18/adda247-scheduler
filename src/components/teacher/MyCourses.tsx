@@ -32,10 +32,10 @@ const MyCourses: React.FC = () => {
       if (response.success) {
         setBatches(response.data);
       } else {
-        showToast.error('Failed to fetch your courses');
+        showToast.error("Failed to fetch your courses");
       }
     } catch (error) {
-      handleApiError(error, 'Failed to fetch your courses');
+      handleApiError(error, "Failed to fetch your courses");
       console.error("Error fetching faculty subjects:", error);
     } finally {
       setLoading(false);
@@ -58,115 +58,117 @@ const MyCourses: React.FC = () => {
   ) => {
     try {
       setCompletingLecture(lectureData.lectureId);
-      
+
       // Correct API payload structure
       const payload = {
         batchId: batchData._id,
-        subjectId: subjectData.subjectId,
-        topicId: topicData.topicId,
-        lectureId: lectureData.lectureId,
+        subjectId: subjectData._id,
+        topicId: topicData._id,
+        lectureId: lectureData._id,
       };
 
-      console.log('API Payload:', payload); // Debug log
+      console.log("API Payload:", payload); // Debug log
 
       const response = await apiService.markLectureCompleted(payload);
 
       if (response.success) {
-        showToast.success('Lecture marked as completed');
-        
+        showToast.success("Lecture marked as completed");
+
         // Update batches state immediately
-        setBatches(prevBatches => 
-          prevBatches.map(batch => {
+        setBatches((prevBatches) =>
+          prevBatches.map((batch) => {
             if (batch._id === batchData._id) {
               return {
                 ...batch,
-                subjects: batch.subjects.map(subject => {
+                subjects: batch.subjects.map((subject) => {
                   if (subject.subjectId === subjectData.subjectId) {
                     return {
                       ...subject,
-                      topics: subject.topics.map(topic => {
+                      topics: subject.topics.map((topic) => {
                         if (topic.topicId === topicData.topicId) {
                           return {
                             ...topic,
-                            lectures: topic.lectures.map(lecture => {
+                            lectures: topic.lectures.map((lecture) => {
                               if (lecture.lectureId === lectureData.lectureId) {
                                 return {
                                   ...lecture,
                                   completedAt: new Date().toISOString(),
-                                  completedBy: 'current-user'
+                                  completedBy: "current-user",
                                 };
                               }
                               return lecture;
-                            })
+                            }),
                           };
                         }
                         return topic;
-                      })
+                      }),
                     };
                   }
                   return subject;
-                })
+                }),
               };
             }
             return batch;
           })
         );
-        
+
         // Update selectedBatch state if it's the current batch being viewed
         if (selectedBatch && selectedBatch._id === batchData._id) {
-          setSelectedBatch(prevSelected => {
+          setSelectedBatch((prevSelected) => {
             if (!prevSelected) return null;
             return {
               ...prevSelected,
-              subjects: prevSelected.subjects.map(subject => {
+              subjects: prevSelected.subjects.map((subject) => {
                 if (subject.subjectId === subjectData.subjectId) {
                   return {
                     ...subject,
-                    topics: subject.topics.map(topic => {
+                    topics: subject.topics.map((topic) => {
                       if (topic.topicId === topicData.topicId) {
                         return {
                           ...topic,
-                          lectures: topic.lectures.map(lecture => {
+                          lectures: topic.lectures.map((lecture) => {
                             if (lecture.lectureId === lectureData.lectureId) {
                               return {
                                 ...lecture,
                                 completedAt: new Date().toISOString(),
-                                completedBy: 'current-user'
+                                completedBy: "current-user",
                               };
                             }
                             return lecture;
-                          })
+                          }),
                         };
                       }
                       return topic;
-                    })
+                    }),
                   };
                 }
                 return subject;
-              })
+              }),
             };
           });
         }
-        
+
         // Dispatch custom event to notify other components
-        window.dispatchEvent(new CustomEvent('lectureCompleted', {
-          detail: { 
-            batchId: batchData._id, 
-            subjectId: subjectData.subjectId, 
-            topicId: topicData.topicId, 
-            lectureId: lectureData.lectureId 
-          }
-        }));
-        
+        window.dispatchEvent(
+          new CustomEvent("lectureCompleted", {
+            detail: {
+              batchId: batchData._id,
+              subjectId: subjectData.subjectId,
+              topicId: topicData.topicId,
+              lectureId: lectureData.lectureId,
+            },
+          })
+        );
+
         // Refresh data after a short delay to ensure consistency
         setTimeout(() => {
           fetchFacultySubjects();
         }, 1000);
       } else {
-        showToast.error('Failed to mark lecture as completed');
+        showToast.error("Failed to mark lecture as completed");
       }
     } catch (error) {
-      handleApiError(error, 'Failed to mark lecture as completed');
+      handleApiError(error, "Failed to mark lecture as completed");
       console.error("Error marking lecture as completed:", error);
       // Refresh data on error to ensure UI consistency
       fetchFacultySubjects();
@@ -256,8 +258,9 @@ const MyCourses: React.FC = () => {
                           {topic.lectures.map((lecture, lectureIndex) => {
                             const isCompleted =
                               lecture.completedAt && lecture.completedBy;
-                            const isCurrentlyCompleting = completingLecture === lecture.lectureId;
-                            
+                            const isCurrentlyCompleting =
+                              completingLecture === lecture.lectureId;
+
                             return (
                               <div
                                 key={lecture.lectureId}
