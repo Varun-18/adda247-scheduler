@@ -54,11 +54,23 @@ const MyLectures: React.FC = () => {
 
       if (response.success) {
         showToast.success('Lecture marked as completed');
-        // Remove the completed lecture from the list
+        
+        // Immediately remove the completed lecture from the list for better UX
         setLectures((prev) =>
           prev.filter((l) => l.lectureId !== lecture.lectureId)
         );
-        // Optionally refresh the entire list to ensure consistency
+        
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('lectureCompleted', {
+          detail: { 
+            batchId: lecture.batchId, 
+            subjectId: lecture.subjectId, 
+            topicId: lecture.topicId, 
+            lectureId: lecture.lectureId 
+          }
+        }));
+        
+        // Refresh the entire list to ensure consistency with backend
         setTimeout(() => {
           fetchFacultyLectures();
         }, 1000);
@@ -68,6 +80,9 @@ const MyLectures: React.FC = () => {
     } catch (error) {
       handleApiError(error, 'Failed to mark lecture as completed');
       console.error("Error marking lecture as completed:", error);
+      
+      // If there's an error, refresh the data to ensure UI consistency
+      fetchFacultyLectures();
     } finally {
       setCompletingLecture(null);
     }

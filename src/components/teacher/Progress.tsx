@@ -8,9 +8,23 @@ const Progress: React.FC = () => {
   const [analytics, setAnalytics] = useState<FacultyAnalytics | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchProgressData();
+  }, [refreshKey]);
+
+  // Listen for lecture completion events
+  useEffect(() => {
+    const handleLectureCompleted = () => {
+      setRefreshKey(prev => prev + 1);
+    };
+
+    window.addEventListener('lectureCompleted', handleLectureCompleted);
+    
+    return () => {
+      window.removeEventListener('lectureCompleted', handleLectureCompleted);
+    };
   }, []);
 
   const fetchProgressData = async () => {

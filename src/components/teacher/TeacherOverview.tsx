@@ -9,9 +9,25 @@ const TeacherOverview: React.FC = () => {
   const [upcomingLectures, setUpcomingLectures] = useState<FacultyLecture[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchDashboardData();
+  }, [refreshKey]);
+
+  // Listen for lecture completion events from other components
+  useEffect(() => {
+    const handleLectureCompleted = () => {
+      // Trigger a refresh of dashboard data
+      setRefreshKey(prev => prev + 1);
+    };
+
+    // You can use custom events or a more sophisticated state management solution
+    window.addEventListener('lectureCompleted', handleLectureCompleted);
+    
+    return () => {
+      window.removeEventListener('lectureCompleted', handleLectureCompleted);
+    };
   }, []);
 
   const fetchDashboardData = async () => {

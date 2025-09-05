@@ -67,7 +67,54 @@ const MyCourses: React.FC = () => {
 
       if (response.success) {
         showToast.success('Lecture marked as completed');
-        fetchFacultySubjects(); // Revalidate data
+        
+        // Update the local state immediately for better UX
+        setBatches(prevBatches => 
+          prevBatches.map(batch => {
+            if (batch._id === batchId) {
+              return {
+                ...batch,
+                subjects: batch.subjects.map(subject => {
+                  if (subject._id === subjectId) {
+                    return {
+                      ...subject,
+                      topics: subject.topics.map(topic => {
+                        if (topic._id === topicId) {
+                          return {
+                            ...topic,
+                            lectures: topic.lectures.map(lecture => {
+                              if (lecture._id === lectureId) {
+                                return {
+                                  ...lecture,
+                                  completedAt: new Date().toISOString(),
+                                  completedBy: 'current-user' // You might want to get this from auth context
+                                };
+                              }
+                              return lecture;
+                            })
+                          };
+                        }
+                        return topic;
+                      })
+                    };
+                  }
+                  return subject;
+                })
+              };
+            }
+            return batch;
+          })
+        );
+        
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('lectureCompleted', {
+          detail: { batchId, subjectId, topicId, lectureId }
+        }));
+        
+        // Also fetch fresh data to ensure consistency
+        setTimeout(() => {
+          fetchFacultySubjects();
+        }, 500);
       } else {
         showToast.error('Failed to mark lecture as completed');
       }
