@@ -51,92 +51,98 @@ const MyCourses: React.FC = () => {
   );
 
   const handleMarkLectureCompleted = async (
-    batch: FacultyBatch,
-    subject: any,
-    topic: any,
-    lecture: any
+    batchData: FacultyBatch,
+    subjectData: any,
+    topicData: any,
+    lectureData: any
   ) => {
     try {
-      setCompletingLecture(lecture.lectureId);
-      const response = await apiService.markLectureCompleted({
-        batchId: batch._id,
-        subjectId: subject.subjectId,
-        topicId: topic.topicId,
-        lectureId: lecture.lectureId,
-      });
+      setCompletingLecture(lectureData.lectureId);
+      
+      // Correct API payload structure
+      const payload = {
+        batchId: batchData._id,
+        subjectId: subjectData.subjectId,
+        topicId: topicData.topicId,
+        lectureId: lectureData.lectureId,
+      };
+
+      console.log('API Payload:', payload); // Debug log
+
+      const response = await apiService.markLectureCompleted(payload);
 
       if (response.success) {
         showToast.success('Lecture marked as completed');
         
-        // Update the local state immediately for better UX
+        // Update batches state immediately
         setBatches(prevBatches => 
           prevBatches.map(batch => {
-            if (batchItem._id === batch._id) {
+            if (batch._id === batchData._id) {
               return {
-                ...batchItem,
-                subjects: batchItem.subjects.map(subjectItem => {
-                  if (subjectItem.subjectId === subject.subjectId) {
+                ...batch,
+                subjects: batch.subjects.map(subject => {
+                  if (subject.subjectId === subjectData.subjectId) {
                     return {
-                      ...subjectItem,
-                      topics: subjectItem.topics.map(topicItem => {
-                        if (topicItem.topicId === topic.topicId) {
+                      ...subject,
+                      topics: subject.topics.map(topic => {
+                        if (topic.topicId === topicData.topicId) {
                           return {
-                            ...topicItem,
-                            lectures: topicItem.lectures.map(lectureItem => {
-                              if (lectureItem.lectureId === lecture.lectureId) {
+                            ...topic,
+                            lectures: topic.lectures.map(lecture => {
+                              if (lecture.lectureId === lectureData.lectureId) {
                                 return {
-                                  ...lectureItem,
+                                  ...lecture,
                                   completedAt: new Date().toISOString(),
                                   completedBy: 'current-user'
                                 };
                               }
-                              return lectureItem;
+                              return lecture;
                             })
                           };
                         }
-                        return topicItem;
+                        return topic;
                       })
                     };
                   }
-                  return subjectItem;
+                  return subject;
                 })
               };
             }
-            return batchItem;
+            return batch;
           })
         );
         
-        // Update selectedBatch if it's the current batch being viewed
-        if (selectedBatch && selectedBatch._id === batch._id) {
+        // Update selectedBatch state if it's the current batch being viewed
+        if (selectedBatch && selectedBatch._id === batchData._id) {
           setSelectedBatch(prevSelected => {
             if (!prevSelected) return null;
             return {
               ...prevSelected,
-              subjects: prevSelected.subjects.map(subjectItem => {
-                if (subjectItem.subjectId === subject.subjectId) {
+              subjects: prevSelected.subjects.map(subject => {
+                if (subject.subjectId === subjectData.subjectId) {
                   return {
-                    ...subjectItem,
-                    topics: subjectItem.topics.map(topicItem => {
-                      if (topicItem.topicId === topic.topicId) {
+                    ...subject,
+                    topics: subject.topics.map(topic => {
+                      if (topic.topicId === topicData.topicId) {
                         return {
-                          ...topicItem,
-                          lectures: topicItem.lectures.map(lectureItem => {
-                            if (lectureItem.lectureId === lecture.lectureId) {
+                          ...topic,
+                          lectures: topic.lectures.map(lecture => {
+                            if (lecture.lectureId === lectureData.lectureId) {
                               return {
-                                ...lectureItem,
+                                ...lecture,
                                 completedAt: new Date().toISOString(),
                                 completedBy: 'current-user'
                               };
                             }
-                            return lectureItem;
+                            return lecture;
                           })
                         };
                       }
-                      return topicItem;
+                      return topic;
                     })
                   };
                 }
-                return subjectItem;
+                return subject;
               })
             };
           });
@@ -145,23 +151,25 @@ const MyCourses: React.FC = () => {
         // Dispatch custom event to notify other components
         window.dispatchEvent(new CustomEvent('lectureCompleted', {
           detail: { 
-            batchId: batch._id, 
-            subjectId: subject.subjectId, 
-            topicId: topic.topicId, 
-            lectureId: lecture.lectureId 
+            batchId: batchData._id, 
+            subjectId: subjectData.subjectId, 
+            topicId: topicData.topicId, 
+            lectureId: lectureData.lectureId 
           }
         }));
         
-        // Also fetch fresh data to ensure consistency
+        // Refresh data after a short delay to ensure consistency
         setTimeout(() => {
           fetchFacultySubjects();
-        }, 500);
+        }, 1000);
       } else {
         showToast.error('Failed to mark lecture as completed');
       }
     } catch (error) {
       handleApiError(error, 'Failed to mark lecture as completed');
       console.error("Error marking lecture as completed:", error);
+      // Refresh data on error to ensure UI consistency
+      fetchFacultySubjects();
     } finally {
       setCompletingLecture(null);
     }
@@ -248,6 +256,8 @@ const MyCourses: React.FC = () => {
                           {topic.lectures.map((lecture, lectureIndex) => {
                             const isCompleted =
                               lecture.completedAt && lecture.completedBy;
+                            const isCurrentlyCompleting = completingLecture === lecture.lectureId;
+                            
                             return (
                               <div
                                 key={lecture.lectureId}
@@ -279,10 +289,10 @@ const MyCourses: React.FC = () => {
                                         lecture
                                       )
                                     }
-                                    disabled={completingLecture === lecture.lectureId}
-                                    className="text-xs text-red-600 hover:text-red-800 font-medium"
+                                    disabled={isCurrentlyCompleting}
+                                    className="text-xs text-red-600 hover:text-red-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    {completingLecture === lecture.lectureId
+                                    {isCurrentlyCompleting
                                       ? "Marking..."
                                       : "Mark as Completed"}
                                   </button>
