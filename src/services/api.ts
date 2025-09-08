@@ -105,6 +105,23 @@ export interface BusinessAnalytics {
   }[];
 }
 
+export interface FacultyCompletedLecture {
+  batchId: string;
+  batchName: string;
+  subjectId: string;
+  subjectTitle: string;
+  topicId: string;
+  topicTitle: string;
+  lectureId: string;
+  lectureTitle: string;
+  completedAt: string;
+}
+
+export interface GetFacultyCompletedLecturesPayload {
+  batchId: string;
+  subjectId: string;
+}
+
 export interface MarkLectureCompletedPayload {
   batchId: string;
   subjectId: string;
@@ -702,6 +719,15 @@ class ApiService {
 
   async getBusinessAnalytics(): Promise<ApiResponse<BusinessAnalytics>> {
     return this.request<BusinessAnalytics>("/batch/business/analytics");
+  }
+
+  async getFacultyCompletedLectures(
+    payload: GetFacultyCompletedLecturesPayload
+  ): Promise<ApiResponse<FacultyCompletedLecture[]>> {
+    return this.request<FacultyCompletedLecture[]>("/batch/faculty/completed/lectures", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   }
 }
 

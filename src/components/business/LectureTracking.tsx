@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Calendar, Clock, User, BookOpen, TrendingUp, Filter, RefreshCw, Target, CheckCircle } from 'lucide-react';
+import { Search, Calendar, Clock, User, BookOpen, TrendingUp, Filter, RefreshCw, Target, CheckCircle, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { apiService, BusinessOverviewItem, BusinessActivity } from '../../services/api';
 import { showToast, handleApiError } from '../../utils/toast';
 
 const LectureTracking: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'assignments' | 'activity'>('assignments');
   const [searchTerm, setSearchTerm] = useState('');
   const [overview, setOverview] = useState<BusinessOverviewItem[]>([]);
@@ -95,6 +97,16 @@ const LectureTracking: React.FC = () => {
 
   const summaryStats = calculateSummaryStats();
 
+  const handleViewFacultyDetails = (assignment: BusinessOverviewItem) => {
+    navigate(`/faculty-details/${assignment.batchId}/${assignment.subjectId}`, {
+      state: {
+        facultyInfo: assignment.faculty,
+        batchName: assignment.batchName,
+        subjectTitle: assignment.subjectTitle
+      }
+    });
+  };
+
   const renderAssignmentsTab = () => (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -160,6 +172,7 @@ const LectureTracking: React.FC = () => {
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Remaining</th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Last Lecture</th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -214,6 +227,16 @@ const LectureTracking: React.FC = () => {
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
                     {assignment.lastLecture ? new Date(assignment.lastLecture).toLocaleDateString() : 'No lectures yet'}
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                    <button
+                      onClick={() => handleViewFacultyDetails(assignment)}
+                      className="flex items-center space-x-1 text-sm text-red-600 hover:text-red-800 font-medium transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span className="hidden sm:inline">View Details</span>
+                      <span className="sm:hidden">Details</span>
+                    </button>
                   </td>
                 </tr>
               ))}

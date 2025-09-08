@@ -7,6 +7,7 @@ import BusinessDashboard from './components/business/BusinessDashboard';
 import TeacherDashboard from './components/teacher/TeacherDashboard';
 import CourseDetails from './components/business/CourseDetails';
 import BatchDetails from './components/business/BatchDetails';
+import FacultyDetails from './components/business/FacultyDetails';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
@@ -57,6 +58,7 @@ function AppContent() {
                   <Route path="/courses/:courseId" element={<CourseDetails />} />
                   <Route path="/batches" element={<BusinessDashboard />} />
                   <Route path="/batches/:batchId" element={<BatchDetails />} />
+                  <Route path="/faculty-details/:batchId/:subjectId" element={<FacultyDetails />} />
                   <Route path="/lectures" element={<BusinessDashboard />} />
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 </>
