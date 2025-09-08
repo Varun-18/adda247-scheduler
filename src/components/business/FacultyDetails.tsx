@@ -1,27 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, BookOpen, Clock, CheckCircle, Calendar, TrendingUp, RefreshCw } from 'lucide-react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { apiService, FacultyCompletedLecture } from '../../services/api';
-import { showToast, handleApiError } from '../../utils/toast';
+import React, { useState, useEffect } from "react";
+import {
+  ArrowLeft,
+  User,
+  BookOpen,
+  Clock,
+  CheckCircle,
+  Calendar,
+  TrendingUp,
+  RefreshCw,
+} from "lucide-react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { apiService, FacultyCompletedLecture } from "../../services/api";
+import { showToast, handleApiError } from "../../utils/toast";
 
 const FacultyDetails: React.FC = () => {
-  const { batchId, subjectId } = useParams<{ batchId: string; subjectId: string }>();
+  const { batchId, subjectId } = useParams<{
+    batchId: string;
+    subjectId: string;
+  }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const [completedLectures, setCompletedLectures] = useState<FacultyCompletedLecture[]>([]);
+  const [completedLectures, setCompletedLectures] = useState<
+    FacultyCompletedLecture[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Get faculty info from location state if available
   const facultyInfo = location.state?.facultyInfo || null;
-  const batchName = location.state?.batchName || 'Unknown Batch';
-  const subjectTitle = location.state?.subjectTitle || 'Unknown Subject';
+  const batchName = location.state?.batchName || "Unknown Batch";
+  const subjectTitle = location.state?.subjectTitle || "Unknown Subject";
 
   useEffect(() => {
     if (batchId && subjectId) {
       fetchFacultyCompletedLectures();
     } else {
-      navigate('/lectures');
+      navigate("/lectures");
     }
   }, [batchId, subjectId]);
 
@@ -35,23 +49,27 @@ const FacultyDetails: React.FC = () => {
       const response = await apiService.getFacultyCompletedLectures({
         batchId,
         subjectId,
-        facultyId: facultyInfo?._id || ''
+        facultyId: facultyInfo?._id || "",
       });
 
       if (response.success) {
         setCompletedLectures(response.data);
       } else {
-        throw new Error('Failed to fetch faculty completed lectures');
+        throw new Error("Failed to fetch faculty completed lectures");
       }
     } catch (error) {
-      handleApiError(error, 'Failed to fetch faculty lecture details');
-      
-      if (error?.isAuthError || error?.status === 401 || error?.status === 403) {
+      handleApiError(error, "Failed to fetch faculty lecture details");
+
+      if (
+        error?.isAuthError ||
+        error?.status === 401 ||
+        error?.status === 403
+      ) {
         return;
       }
-      
-      setError('Failed to load faculty lecture details');
-      console.error('Error fetching faculty completed lectures:', error);
+
+      setError("Failed to load faculty lecture details");
+      console.error("Error fetching faculty completed lectures:", error);
     } finally {
       setLoading(false);
     }
@@ -61,14 +79,16 @@ const FacultyDetails: React.FC = () => {
     const date = new Date(dateString);
     return {
       date: date.toLocaleDateString(),
-      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
   };
 
   const calculateStats = () => {
     const totalLectures = completedLectures.length;
-    const uniqueTopics = new Set(completedLectures.map(lecture => lecture.topicId)).size;
-    
+    const uniqueTopics = new Set(
+      completedLectures.map((lecture) => lecture.topicId)
+    ).size;
+
     // Calculate lectures per day
     const lecturesByDate = completedLectures.reduce((acc, lecture) => {
       const date = new Date(lecture.completedAt).toDateString();
@@ -76,23 +96,29 @@ const FacultyDetails: React.FC = () => {
       return acc;
     }, {} as Record<string, number>);
 
-    const averageLecturesPerDay = Object.keys(lecturesByDate).length > 0 
-      ? Math.round(totalLectures / Object.keys(lecturesByDate).length * 10) / 10
-      : 0;
+    const averageLecturesPerDay =
+      Object.keys(lecturesByDate).length > 0
+        ? Math.round(
+            (totalLectures / Object.keys(lecturesByDate).length) * 10
+          ) / 10
+        : 0;
 
     // Get most recent lecture
-    const mostRecentLecture = completedLectures.length > 0 
-      ? completedLectures.reduce((latest, current) => 
-          new Date(current.completedAt) > new Date(latest.completedAt) ? current : latest
-        )
-      : null;
+    const mostRecentLecture =
+      completedLectures.length > 0
+        ? completedLectures.reduce((latest, current) =>
+            new Date(current.completedAt) > new Date(latest.completedAt)
+              ? current
+              : latest
+          )
+        : null;
 
     return {
       totalLectures,
       uniqueTopics,
       averageLecturesPerDay,
       mostRecentLecture,
-      activeDays: Object.keys(lecturesByDate).length
+      activeDays: Object.keys(lecturesByDate).length,
     };
   };
 
@@ -108,11 +134,17 @@ const FacultyDetails: React.FC = () => {
   }, {} as Record<string, FacultyCompletedLecture[]>);
 
   // Sort topics by most recent lecture
-  const sortedTopics = Object.entries(lecturesByTopic).sort(([, lecturesA], [, lecturesB]) => {
-    const latestA = Math.max(...lecturesA.map(l => new Date(l.completedAt).getTime()));
-    const latestB = Math.max(...lecturesB.map(l => new Date(l.completedAt).getTime()));
-    return latestB - latestA;
-  });
+  const sortedTopics = Object.entries(lecturesByTopic).sort(
+    ([, lecturesA], [, lecturesB]) => {
+      const latestA = Math.max(
+        ...lecturesA.map((l) => new Date(l.completedAt).getTime())
+      );
+      const latestB = Math.max(
+        ...lecturesB.map((l) => new Date(l.completedAt).getTime())
+      );
+      return latestB - latestA;
+    }
+  );
 
   if (loading && completedLectures.length === 0) {
     return (
@@ -130,7 +162,7 @@ const FacultyDetails: React.FC = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <button
-            onClick={() => navigate('/lectures')}
+            onClick={() => navigate("/lectures")}
             className="flex items-center space-x-2 text-red-600 hover:text-red-800 font-medium"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -151,11 +183,11 @@ const FacultyDetails: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 m-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between ">
         <button
-          onClick={() => navigate('/lectures')}
+          onClick={() => navigate("/lectures")}
           className="flex items-center space-x-2 text-red-600 hover:text-red-800 font-medium"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -166,8 +198,8 @@ const FacultyDetails: React.FC = () => {
           disabled={loading}
           className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          <span>{loading ? "Refreshing..." : "Refresh"}</span>
         </button>
       </div>
 
@@ -180,7 +212,9 @@ const FacultyDetails: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {facultyInfo ? `${facultyInfo.firstName} ${facultyInfo.lastName}` : 'Faculty Details'}
+                {facultyInfo
+                  ? `${facultyInfo.firstName} ${facultyInfo.lastName}`
+                  : "Faculty Details"}
               </h1>
               <p className="text-gray-600">
                 {subjectTitle} • {batchName}
@@ -199,28 +233,36 @@ const FacultyDetails: React.FC = () => {
               <div className="flex items-center justify-center mb-2">
                 <CheckCircle className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-2xl font-bold text-blue-600">{stats.totalLectures}</h3>
+              <h3 className="text-2xl font-bold text-blue-600">
+                {stats.totalLectures}
+              </h3>
               <p className="text-sm text-gray-600">Total Lectures</p>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <div className="flex items-center justify-center mb-2">
                 <BookOpen className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-2xl font-bold text-green-600">{stats.uniqueTopics}</h3>
+              <h3 className="text-2xl font-bold text-green-600">
+                {stats.uniqueTopics}
+              </h3>
               <p className="text-sm text-gray-600">Topics Covered</p>
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <div className="flex items-center justify-center mb-2">
                 <TrendingUp className="w-8 h-8 text-purple-600" />
               </div>
-              <h3 className="text-2xl font-bold text-purple-600">{stats.averageLecturesPerDay}</h3>
+              <h3 className="text-2xl font-bold text-purple-600">
+                {stats.averageLecturesPerDay}
+              </h3>
               <p className="text-sm text-gray-600">Avg/Day</p>
             </div>
             <div className="text-center p-4 bg-yellow-50 rounded-lg">
               <div className="flex items-center justify-center mb-2">
                 <Calendar className="w-8 h-8 text-yellow-600" />
               </div>
-              <h3 className="text-2xl font-bold text-yellow-600">{stats.activeDays}</h3>
+              <h3 className="text-2xl font-bold text-yellow-600">
+                {stats.activeDays}
+              </h3>
               <p className="text-sm text-gray-600">Active Days</p>
             </div>
           </div>
@@ -231,7 +273,9 @@ const FacultyDetails: React.FC = () => {
       {stats.mostRecentLecture && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Most Recent Activity</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Most Recent Activity
+            </h2>
           </div>
           <div className="p-6">
             <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-lg">
@@ -239,12 +283,16 @@ const FacultyDetails: React.FC = () => {
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-medium text-gray-900">{stats.mostRecentLecture.lectureTitle}</h3>
+                <h3 className="font-medium text-gray-900">
+                  {stats.mostRecentLecture.lectureTitle}
+                </h3>
                 <p className="text-sm text-gray-600">
                   {stats.mostRecentLecture.topicTitle}
                 </p>
                 <p className="text-xs text-gray-500">
-                  Completed on {formatDate(stats.mostRecentLecture.completedAt).date} at {formatDate(stats.mostRecentLecture.completedAt).time}
+                  Completed on{" "}
+                  {formatDate(stats.mostRecentLecture.completedAt).date} at{" "}
+                  {formatDate(stats.mostRecentLecture.completedAt).time}
                 </p>
               </div>
             </div>
@@ -255,28 +303,43 @@ const FacultyDetails: React.FC = () => {
       {/* Lectures by Topic */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Completed Lectures by Topic</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Completed Lectures by Topic
+          </h2>
         </div>
         <div className="p-6">
           {sortedTopics.length > 0 ? (
             <div className="space-y-6">
               {sortedTopics.map(([topicTitle, lectures]) => (
-                <div key={topicTitle} className="border border-gray-200 rounded-lg p-4">
+                <div
+                  key={topicTitle}
+                  className="border border-gray-200 rounded-lg p-4"
+                >
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-medium text-gray-900">{topicTitle}</h3>
                     <span className="text-sm text-gray-500">
-                      {lectures.length} lecture{lectures.length !== 1 ? 's' : ''}
+                      {lectures.length} lecture
+                      {lectures.length !== 1 ? "s" : ""}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {lectures
-                      .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
+                      .sort(
+                        (a, b) =>
+                          new Date(b.completedAt).getTime() -
+                          new Date(a.completedAt).getTime()
+                      )
                       .map((lecture, index) => {
                         const { date, time } = formatDate(lecture.completedAt);
                         return (
-                          <div key={`${lecture.lectureId}-${index}`} className="bg-gray-50 rounded-lg p-3">
+                          <div
+                            key={`${lecture.lectureId}-${index}`}
+                            className="bg-gray-50 rounded-lg p-3"
+                          >
                             <div className="flex items-start justify-between mb-2">
-                              <h4 className="font-medium text-gray-900 text-sm">{lecture.lectureTitle}</h4>
+                              <h4 className="font-medium text-gray-900 text-sm">
+                                {lecture.lectureTitle}
+                              </h4>
                               <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 ml-2" />
                             </div>
                             <div className="space-y-1">
@@ -299,8 +362,12 @@ const FacultyDetails: React.FC = () => {
           ) : (
             <div className="text-center py-8">
               <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No completed lectures found</h3>
-              <p className="text-gray-600">This faculty hasn't completed any lectures for this subject yet.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No completed lectures found
+              </h3>
+              <p className="text-gray-600">
+                This faculty hasn't completed any lectures for this subject yet.
+              </p>
             </div>
           )}
         </div>
