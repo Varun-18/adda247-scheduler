@@ -102,7 +102,8 @@ const LectureTracking: React.FC = () => {
       state: {
         facultyInfo: assignment.faculty,
         batchName: assignment.batchName,
-        subjectTitle: assignment.subjectTitle
+        subjectTitle: assignment.subjectTitle,
+        facultyId: assignment.facultyId
       }
     });
   };

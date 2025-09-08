@@ -120,6 +120,7 @@ export interface FacultyCompletedLecture {
 export interface GetFacultyCompletedLecturesPayload {
   batchId: string;
   subjectId: string;
+  facultyId: string;
 }
 
 export interface MarkLectureCompletedPayload {

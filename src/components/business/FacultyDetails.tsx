@@ -34,7 +34,8 @@ const FacultyDetails: React.FC = () => {
 
       const response = await apiService.getFacultyCompletedLectures({
         batchId,
-        subjectId
+        subjectId,
+        facultyId: facultyInfo?._id || ''
       });
 
       if (response.success) {
