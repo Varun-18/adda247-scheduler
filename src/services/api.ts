@@ -28,6 +28,7 @@ export interface FacultyLecture {
   topicId: string;
   lectureId: string;
   topicName: string;
+  time?: string;
 }
 
 export interface FacultyBatch {
@@ -35,6 +36,7 @@ export interface FacultyBatch {
   name: string;
   startDate: string;
   endDate: string;
+  time?: string;
   subjects: {
     _id: string;
     subjectId: string;

@@ -229,6 +229,11 @@ const MyLectures: React.FC = () => {
                         <p className="text-xs text-gray-500">
                           Topic: {lecture.topicName}
                         </p>
+                        {lecture.time && (
+                          <p className="text-xs text-gray-500">
+                            Time: {lecture.time}
+                          </p>
+                        )}
                       </div>
 
                       <div className="flex items-center justify-between">
