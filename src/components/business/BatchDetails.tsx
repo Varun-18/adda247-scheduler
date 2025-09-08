@@ -151,6 +151,15 @@ const BatchDetails: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Clock className="w-5 h-5 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Timing</p>
+                <p className="font-medium text-gray-900">{batch.time}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
               <div className="p-2 bg-green-100 rounded-lg">
                 <Clock className="w-5 h-5 text-green-600" />
               </div>

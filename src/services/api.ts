@@ -344,6 +344,7 @@ export interface Batch {
   courseTemplateId: string;
   startDate: string;
   endDate: string;
+  time: string;
   subjects: BatchSubject[];
   createdAt: string;
   updatedAt: string;
@@ -377,6 +378,7 @@ export interface CreateBatchPayload {
   name: string;
   courseTemplateId: string;
   startDate: string;
+  time: string;
   facultyAssignments: Record<string, string>; // subjectId -> facultyId mapping
 }
 

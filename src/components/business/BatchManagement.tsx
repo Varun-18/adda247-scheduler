@@ -55,6 +55,7 @@ const BatchManagement: React.FC = () => {
     name: "",
     courseTemplateId: "",
     startDate: "",
+    time: "",
   });
 
   React.useEffect(() => {
@@ -174,6 +175,7 @@ const BatchManagement: React.FC = () => {
         name: formData.name,
         courseTemplateId: formData.courseTemplateId,
         startDate: new Date(formData.startDate).toISOString(),
+        time: formData.time,
         facultyAssignments,
       };
 
@@ -181,7 +183,7 @@ const BatchManagement: React.FC = () => {
       if (response.success) {
         showToast.success("Batch created successfully");
         setShowAddModal(false);
-        setFormData({ name: "", courseTemplateId: "", startDate: "" });
+        setFormData({ name: "", courseTemplateId: "", startDate: "", time: "" });
         setSelectedCourse(null);
         setFacultyAssignments({});
         fetchBatches(); // Revalidate data
@@ -431,6 +433,10 @@ const BatchManagement: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Timing:</span>
+                    <span className="text-gray-900">{batch.time}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">End Date:</span>
                     <span className="text-gray-900">
                       {new Date(batch.endDate).toLocaleDateString()}
@@ -600,6 +606,27 @@ const BatchManagement: React.FC = () => {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Batch Timing
+                </label>
+                <select
+                  value={formData.time}
+                  onChange={(e) =>
+                    setFormData({ ...formData, time: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  required
+                >
+                  <option value="">Select batch timing</option>
+                  <option value="8am-10am">8am-10am</option>
+                  <option value="10:30am-12:30pm">10:30am-12:30pm</option>
+                  <option value="1pm-3pm">1pm-3pm</option>
+                  <option value="3pm-5pm">3pm-5pm</option>
+                  <option value="5pm-7pm">5pm-7pm</option>
+                </select>
+              </div>
+
               {/* Faculty Assignments */}
               {selectedCourse && selectedCourse.subjects.length > 0 && (
                 <div>
@@ -652,6 +679,7 @@ const BatchManagement: React.FC = () => {
                   disabled={
                     loading ||
                     !selectedCourse ||
+                    !formData.time ||
                     Object.keys(facultyAssignments).length !==
                       selectedCourse?.subjects.length
                   }
@@ -667,6 +695,7 @@ const BatchManagement: React.FC = () => {
                       name: "",
                       courseTemplateId: "",
                       startDate: "",
+                      time: "",
                     });
                     setSelectedCourse(null);
                     setFacultyAssignments({});
