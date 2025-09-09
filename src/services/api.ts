@@ -80,6 +80,10 @@ export interface BusinessOverviewItem {
   completionRate: number;
 }
 
+export interface BusinessOverviewFilters {
+  facultyName?: string;
+  batchName?: string;
+}
 export interface BusinessActivity {
   batchId: string;
   batchName: string;
@@ -718,6 +722,19 @@ class ApiService {
     return this.request<BusinessOverviewItem[]>("/batch/business/overview");
   }
 
+  async getBusinessOverview(filters?: BusinessOverviewFilters): Promise<ApiResponse<BusinessOverviewItem[]>> {
+    const params = new URLSearchParams();
+    
+    if (filters) {
+      if (filters.facultyName) params.append("facultyName", filters.facultyName);
+      if (filters.batchName) params.append("batchName", filters.batchName);
+    }
+    
+    const queryString = params.toString();
+    const endpoint = queryString ? `/batch/business/overview?${queryString}` : "/batch/business/overview";
+    
+    return this.request<BusinessOverviewItem[]>(endpoint);
+  }
   async getBusinessActivity(): Promise<ApiResponse<BusinessActivity[]>> {
     return this.request<BusinessActivity[]>("/batch/business/activity");
   }
