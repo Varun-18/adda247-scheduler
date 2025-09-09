@@ -15,6 +15,123 @@ const LectureTracking: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Get filtered data based on current filters
+  const getFilteredData = () => {
+    let filtered = overview;
+    
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(item =>
+        (item.faculty.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.faculty.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.subjectTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.batchName.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+    
+    // Apply faculty filter
+    if (facultyFilter) {
+      filtered = filtered.filter(item => 
+        `${item.faculty.firstName} ${item.faculty.lastName}` === facultyFilter
+      );
+    }
+    
+    // Apply batch filter
+    if (batchFilter) {
+      filtered = filtered.filter(item => item.batchName === batchFilter);
+    }
+    
+    return filtered;
+  };
+
+  const filteredOverview = getFilteredData();
+
+  // Get available faculty options based on current batch filter
+  const getAvailableFaculty = () => {
+    let dataToFilter = overview;
+    
+    // If batch is selected, only show faculty from that batch
+    if (batchFilter) {
+      dataToFilter = overview.filter(item => item.batchName === batchFilter);
+    }
+    
+    // Apply search filter if exists
+    if (searchTerm) {
+      dataToFilter = dataToFilter.filter(item =>
+        (item.faculty.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.faculty.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.subjectTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.batchName.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+    
+    return Array.from(
+      new Set(dataToFilter.map(item => `${item.faculty.firstName} ${item.faculty.lastName}`))
+    ).sort();
+  };
+
+  // Get available batch options based on current faculty filter
+  const getAvailableBatches = () => {
+    let dataToFilter = overview;
+    
+    // If faculty is selected, only show batches for that faculty
+    if (facultyFilter) {
+      dataToFilter = overview.filter(item => 
+        `${item.faculty.firstName} ${item.faculty.lastName}` === facultyFilter
+      );
+    }
+    
+    // Apply search filter if exists
+    if (searchTerm) {
+      dataToFilter = dataToFilter.filter(item =>
+        (item.faculty.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.faculty.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.subjectTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.batchName.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+    
+    return Array.from(
+      new Set(dataToFilter.map(item => item.batchName))
+    ).sort();
+  };
+
+  const availableFaculty = getAvailableFaculty();
+  const availableBatches = getAvailableBatches();
+
+  // Handle faculty filter change
+  const handleFacultyFilterChange = (selectedFaculty: string) => {
+    setFacultyFilter(selectedFaculty);
+    
+    // If a faculty is selected, check if current batch filter is still valid
+    if (selectedFaculty && batchFilter) {
+      const facultyBatches = overview
+        .filter(item => `${item.faculty.firstName} ${item.faculty.lastName}` === selectedFaculty)
+        .map(item => item.batchName);
+      
+      // If current batch is not available for selected faculty, clear batch filter
+      if (!facultyBatches.includes(batchFilter)) {
+        setBatchFilter('');
+      }
+    }
+  };
+
+  // Handle batch filter change
+  const handleBatchFilterChange = (selectedBatch: string) => {
+    setBatchFilter(selectedBatch);
+    
+    // If a batch is selected, check if current faculty filter is still valid
+    if (selectedBatch && facultyFilter) {
+      const batchFaculty = overview
+        .filter(item => item.batchName === selectedBatch)
+        .map(item => `${item.faculty.firstName} ${item.faculty.lastName}`);
+      
+      // If current faculty is not available for selected batch, clear faculty filter
+      if (!batchFaculty.includes(facultyFilter)) {
+        setFacultyFilter('');
+      }
+    }
+  };
   useEffect(() => {
     fetchLectureData();
   }, []);
@@ -72,14 +189,6 @@ const LectureTracking: React.FC = () => {
     }
   };
 
-  const filteredOverview = overview.filter(item =>
-    (item.faculty.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     item.faculty.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     item.subjectTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     item.batchName.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (facultyFilter === '' || `${item.faculty.firstName} ${item.faculty.lastName}` === facultyFilter) &&
-    (batchFilter === '' || item.batchName === batchFilter)
-  );
 
   const filteredActivity = recentActivity.filter(activity =>
     activity.batchName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -87,15 +196,6 @@ const LectureTracking: React.FC = () => {
     activity.lectureTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
     activity.topicTitle.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // Get unique faculty names and batch names for filter dropdowns
-  const uniqueFaculty = Array.from(
-    new Set(overview.map(item => `${item.faculty.firstName} ${item.faculty.lastName}`))
-  ).sort();
-  
-  const uniqueBatches = Array.from(
-    new Set(overview.map(item => item.batchName))
-  ).sort();
 
   const clearFilters = () => {
     setFacultyFilter('');
@@ -106,7 +206,7 @@ const LectureTracking: React.FC = () => {
     const completedLectures = overview.reduce((acc, item) => acc + item.completedLectures, 0);
     const activeTeachers = new Set(overview.map(item => item.facultyId)).size;
     const averageCompletion = overview.length > 0 
-      ? Math.round(overview.reduce((acc, item) => acc + item.completionRate, 0) / overview.length)
+      ? Number((overview.reduce((acc, item) => acc + item.completionRate, 0) / overview.length).toFixed(2))
       : 0;
 
     return { totalLectures, completedLectures, activeTeachers, averageCompletion };
@@ -408,11 +508,11 @@ const LectureTracking: React.FC = () => {
                   </label>
                   <select
                     value={facultyFilter}
-                    onChange={(e) => setFacultyFilter(e.target.value)}
+                    onChange={(e) => handleFacultyFilterChange(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   >
                     <option value="">All Faculty</option>
-                    {uniqueFaculty.map((faculty) => (
+                    {availableFaculty.map((faculty) => (
                       <option key={faculty} value={faculty}>
                         {faculty}
                       </option>
@@ -426,11 +526,11 @@ const LectureTracking: React.FC = () => {
                   </label>
                   <select
                     value={batchFilter}
-                    onChange={(e) => setBatchFilter(e.target.value)}
+                    onChange={(e) => handleBatchFilterChange(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   >
                     <option value="">All Batches</option>
-                    {uniqueBatches.map((batch) => (
+                    {availableBatches.map((batch) => (
                       <option key={batch} value={batch}>
                         {batch}
                       </option>
