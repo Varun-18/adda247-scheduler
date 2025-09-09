@@ -8,7 +8,8 @@ const LectureTracking: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'assignments' | 'activity'>('assignments');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState<BusinessOverviewFilters>({});
+  const [facultyFilter, setFacultyFilter] = useState('');
+  const [batchFilter, setBatchFilter] = useState('');
   const [overview, setOverview] = useState<BusinessOverviewItem[]>([]);
   const [recentActivity, setRecentActivity] = useState<BusinessActivity[]>([]);
   const [loading, setLoading] = useState(false);
@@ -16,7 +17,7 @@ const LectureTracking: React.FC = () => {
 
   useEffect(() => {
     fetchLectureData();
-  }, [filters]);
+  }, []);
 
   const fetchLectureData = async () => {
     try {
@@ -24,7 +25,7 @@ const LectureTracking: React.FC = () => {
       setError(null);
 
       const [overviewResponse, activityResponse] = await Promise.all([
-        apiService.getBusinessOverview(filters),
+        apiService.getBusinessOverview(),
         apiService.getBusinessActivity()
       ]);
 
@@ -72,10 +73,12 @@ const LectureTracking: React.FC = () => {
   };
 
   const filteredOverview = overview.filter(item =>
-    item.faculty.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.faculty.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.subjectTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.batchName.toLowerCase().includes(searchTerm.toLowerCase())
+    (item.faculty.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     item.faculty.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     item.subjectTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     item.batchName.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (facultyFilter === '' || `${item.faculty.firstName} ${item.faculty.lastName}` === facultyFilter) &&
+    (batchFilter === '' || item.batchName === batchFilter)
   );
 
   const filteredActivity = recentActivity.filter(activity =>
@@ -94,15 +97,9 @@ const LectureTracking: React.FC = () => {
     new Set(overview.map(item => item.batchName))
   ).sort();
 
-  const handleFilterChange = (filterType: keyof BusinessOverviewFilters, value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [filterType]: value || undefined
-    }));
-  };
-
   const clearFilters = () => {
-    setFilters({});
+    setFacultyFilter('');
+    setBatchFilter('');
   };
   const calculateSummaryStats = () => {
     const totalLectures = overview.reduce((acc, item) => acc + item.totalLectures, 0);
@@ -410,8 +407,8 @@ const LectureTracking: React.FC = () => {
                     Filter by Faculty
                   </label>
                   <select
-                    value={filters.facultyName || ''}
-                    onChange={(e) => handleFilterChange('facultyName', e.target.value)}
+                    value={facultyFilter}
+                    onChange={(e) => setFacultyFilter(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   >
                     <option value="">All Faculty</option>
@@ -428,8 +425,8 @@ const LectureTracking: React.FC = () => {
                     Filter by Batch
                   </label>
                   <select
-                    value={filters.batchName || ''}
-                    onChange={(e) => handleFilterChange('batchName', e.target.value)}
+                    value={batchFilter}
+                    onChange={(e) => setBatchFilter(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   >
                     <option value="">All Batches</option>
@@ -442,7 +439,7 @@ const LectureTracking: React.FC = () => {
                 </div>
                 
                 {/* Clear Filters Button */}
-                {(filters.facultyName || filters.batchName) && (
+                {(facultyFilter || batchFilter) && (
                   <div className="flex items-end">
                     <button
                       onClick={clearFilters}
@@ -460,7 +457,7 @@ const LectureTracking: React.FC = () => {
               {activeTab === 'assignments' ? (
                 <>
                   Showing {filteredOverview.length} of {overview.length} assignments
-                  {(filters.facultyName || filters.batchName || searchTerm) && (
+                  {(facultyFilter || batchFilter || searchTerm) && (
                     <span className="ml-2 text-gray-500">
                       (filtered)
                     </span>
