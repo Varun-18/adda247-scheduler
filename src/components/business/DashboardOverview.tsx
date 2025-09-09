@@ -79,7 +79,7 @@ const DashboardOverview: React.FC = () => {
 
     const totalLectures = overview.reduce((acc, item) => acc + item.totalLectures, 0);
     const completedLectures = overview.reduce((acc, item) => acc + item.completedLectures, 0);
-    const overallCompletion = totalLectures > 0 ? Math.round((completedLectures / totalLectures) * 100) : 0;
+    const overallCompletion = totalLectures > 0 ? Number(((completedLectures / totalLectures) * 100).toFixed(2)) : 0;
 
     return { totalLectures, completedLectures, overallCompletion };
   };

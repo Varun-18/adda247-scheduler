@@ -217,9 +217,9 @@ const Progress: React.FC = () => {
           {progressData.length > 0 ? (
             <div className="space-y-6">
               {progressData.map((batch, index) => {
-                const batchCompletion = Math.round(
+                const batchCompletion = Number((
                   batch.subjects.reduce((acc, subject) => acc + subject.completionRate, 0) / batch.subjects.length
-                );
+                ).toFixed(2));
                 const totalLectures = batch.subjects.reduce((acc, subject) => acc + subject.totalLectures, 0);
                 const completedLectures = batch.subjects.reduce((acc, subject) => acc + subject.completedLectures, 0);
 

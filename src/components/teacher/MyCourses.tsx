@@ -202,7 +202,7 @@ const MyCourses: React.FC = () => {
       0
     );
     return totalLectures > 0
-      ? Math.round((completedLectures / totalLectures) * 100)
+      ? Number(((completedLectures / totalLectures) * 100).toFixed(2))
       : 0;
   };
 

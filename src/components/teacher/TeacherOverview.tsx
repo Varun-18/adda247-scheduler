@@ -142,6 +142,7 @@ const TeacherOverview: React.FC = () => {
     {
       title: 'Completion Rate',
       value: `${Math.round(analytics?.completionRate || 0)}%`,
+      value: `${Number((analytics?.completionRate || 0).toFixed(2))}%`,
       change: 'Overall progress',
       icon: TrendingUp,
       color: 'red'
