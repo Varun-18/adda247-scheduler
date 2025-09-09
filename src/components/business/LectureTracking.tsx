@@ -103,15 +103,6 @@ const LectureTracking: React.FC = () => {
     activity.topicTitle.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Get unique faculty names and batch names for filter dropdowns
-  const uniqueFaculty = Array.from(
-    new Set(overview.map(item => `${item.faculty.firstName} ${item.faculty.lastName}`))
-  ).sort();
-  
-  const uniqueBatches = Array.from(
-    new Set(overview.map(item => item.batchName))
-  ).sort();
-
   const calculateSummaryStats = () => {
     const totalLectures = overview.reduce((acc, item) => acc + item.totalLectures, 0);
     const completedLectures = overview.reduce((acc, item) => acc + item.completedLectures, 0);
