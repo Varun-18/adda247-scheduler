@@ -103,6 +103,15 @@ const LectureTracking: React.FC = () => {
     activity.topicTitle.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Get unique faculty names and batch names for filter dropdowns
+  const uniqueFaculty = Array.from(
+    new Set(overview.map(item => `${item.faculty.firstName} ${item.faculty.lastName}`))
+  ).sort();
+  
+  const uniqueBatches = Array.from(
+    new Set(overview.map(item => item.batchName))
+  ).sort();
+
   const calculateSummaryStats = () => {
     const totalLectures = overview.reduce((acc, item) => acc + item.totalLectures, 0);
     const completedLectures = overview.reduce((acc, item) => acc + item.completedLectures, 0);
@@ -388,7 +397,8 @@ const LectureTracking: React.FC = () => {
 
         {/* Search Bar */}
         <div className="p-4 sm:p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-4">
+          <div className="space-y-4">
+            {/* Search Input */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
@@ -398,6 +408,85 @@ const LectureTracking: React.FC = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
+            </div>
+            
+            {/* Filters - Only show for assignments tab */}
+            {activeTab === 'assignments' && (
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Filter by Faculty
+                  </label>
+                  <select
+                    value={facultyFilter}
+                    onChange={(e) => setFacultyFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  >
+                    <option value="">All Faculty</option>
+                    {uniqueFaculty.map((faculty) => (
+                      <option key={faculty} value={faculty}>
+                        {faculty}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Filter by Batch
+                  </label>
+                  <select
+                    value={batchFilter}
+                    onChange={(e) => setBatchFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  >
+                    <option value="">All Batches</option>
+                    {uniqueBatches.map((batch) => (
+                      <option key={batch} value={batch}>
+                        {batch}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Clear Filters Button */}
+                {(facultyFilter || batchFilter) && (
+                  <div className="flex items-end">
+                    <button
+                      onClick={() => {
+                        setFacultyFilter('');
+                        setBatchFilter('');
+                      }}
+                      className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Results Info */}
+            <div className="text-sm text-gray-600">
+              {activeTab === 'assignments' ? (
+                <>
+                  Showing {filteredOverview.length} of {overview.length} assignments
+                  {(facultyFilter || batchFilter || searchTerm) && (
+                    <span className="ml-2 text-gray-500">
+                      (filtered)
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  Showing {filteredActivity.length} activities
+                  {searchTerm && (
+                    <span className="ml-2 text-gray-500">
+                      (filtered)
+                    </span>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
