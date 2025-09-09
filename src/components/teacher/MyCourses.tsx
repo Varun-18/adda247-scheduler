@@ -374,7 +374,7 @@ const MyCourses: React.FC = () => {
                     <p className="text-gray-600 text-sm mb-3">
                       Duration: {new Date(batch.startDate).toLocaleDateString()}{" "}
                       - {new Date(batch.endDate).toLocaleDateString()}
-                      {batch.time && (
+                      {batch.time && batch.time.trim() !== '' && (
                         <span className="block mt-1">
                           Time: {batch.time}
                         </span>
