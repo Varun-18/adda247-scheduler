@@ -495,7 +495,7 @@ const CourseDetails: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 m-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <button
