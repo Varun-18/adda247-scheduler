@@ -8,6 +8,8 @@ import {
   Calendar,
   TrendingUp,
   RefreshCw,
+  Filter,
+  X,
 } from "lucide-react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { apiService, FacultyCompletedLecture } from "../../services/api";
@@ -25,6 +27,14 @@ const FacultyDetails: React.FC = () => {
   >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Date range filter state
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [filteredLectures, setFilteredLectures] = useState<
+    FacultyCompletedLecture[]
+  >([]);
 
   // Get faculty info from location state if available
   const facultyInfo = location.state?.facultyInfo || null;
@@ -39,6 +49,36 @@ const FacultyDetails: React.FC = () => {
     }
   }, [batchId, subjectId]);
 
+  // Filter lectures based on date range
+  useEffect(() => {
+    if (!startDate && !endDate) {
+      setFilteredLectures(completedLectures);
+      return;
+    }
+
+    const filtered = completedLectures.filter((lecture) => {
+      const lectureDate = new Date(lecture.completedAt);
+      const start = startDate ? new Date(startDate) : null;
+      const end = endDate ? new Date(endDate) : null;
+
+      // Set end date to end of day for inclusive filtering
+      if (end) {
+        end.setHours(23, 59, 59, 999);
+      }
+
+      if (start && end) {
+        return lectureDate >= start && lectureDate <= end;
+      } else if (start) {
+        return lectureDate >= start;
+      } else if (end) {
+        return lectureDate <= end;
+      }
+
+      return true;
+    });
+
+    setFilteredLectures(filtered);
+  }, [completedLectures, startDate, endDate]);
   const fetchFacultyCompletedLectures = async () => {
     if (!batchId || !subjectId) return;
 
@@ -75,6 +115,15 @@ const FacultyDetails: React.FC = () => {
     }
   };
 
+  const clearDateFilter = () => {
+    setStartDate("");
+    setEndDate("");
+    setShowDateFilter(false);
+  };
+
+  const applyDateFilter = () => {
+    setShowDateFilter(false);
+  };
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return {
@@ -83,14 +132,14 @@ const FacultyDetails: React.FC = () => {
     };
   };
 
-  const calculateStats = () => {
-    const totalLectures = completedLectures.length;
+  const calculateStats = (lectures: FacultyCompletedLecture[]) => {
+    const totalLectures = lectures.length;
     const uniqueTopics = new Set(
-      completedLectures.map((lecture) => lecture.topicId)
+      lectures.map((lecture) => lecture.topicId)
     ).size;
 
     // Calculate lectures per day
-    const lecturesByDate = completedLectures.reduce((acc, lecture) => {
+    const lecturesByDate = lectures.reduce((acc, lecture) => {
       const date = new Date(lecture.completedAt).toDateString();
       acc[date] = (acc[date] || 0) + 1;
       return acc;
@@ -105,8 +154,8 @@ const FacultyDetails: React.FC = () => {
 
     // Get most recent lecture
     const mostRecentLecture =
-      completedLectures.length > 0
-        ? completedLectures.reduce((latest, current) =>
+      lectures.length > 0
+        ? lectures.reduce((latest, current) =>
             new Date(current.completedAt) > new Date(latest.completedAt)
               ? current
               : latest
@@ -122,10 +171,11 @@ const FacultyDetails: React.FC = () => {
     };
   };
 
-  const stats = calculateStats();
+  const stats = calculateStats(filteredLectures);
+  const allTimeStats = calculateStats(completedLectures);
 
   // Group lectures by topic for better organization
-  const lecturesByTopic = completedLectures.reduce((acc, lecture) => {
+  const lecturesByTopic = filteredLectures.reduce((acc, lecture) => {
     if (!acc[lecture.topicTitle]) {
       acc[lecture.topicTitle] = [];
     }
@@ -146,7 +196,7 @@ const FacultyDetails: React.FC = () => {
     }
   );
 
-  if (loading && completedLectures.length === 0) {
+  if (loading && filteredLectures.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -157,7 +207,7 @@ const FacultyDetails: React.FC = () => {
     );
   }
 
-  if (error && completedLectures.length === 0) {
+  if (error && filteredLectures.length === 0) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -193,16 +243,94 @@ const FacultyDetails: React.FC = () => {
           <ArrowLeft className="w-5 h-5" />
           <span>Back to Lecture Tracking</span>
         </button>
-        <button
-          onClick={fetchFacultyCompletedLectures}
-          disabled={loading}
-          className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          <span>{loading ? "Refreshing..." : "Refresh"}</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowDateFilter(!showDateFilter)}
+            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Filter className="w-4 h-4" />
+            <span>Date Filter</span>
+          </button>
+          <button
+            onClick={fetchFacultyCompletedLectures}
+            disabled={loading}
+            className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            <span>{loading ? "Refreshing..." : "Refresh"}</span>
+          </button>
+        </div>
       </div>
 
+      {/* Date Filter Panel */}
+      {showDateFilter && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Filter by Date Range</h3>
+            <button
+              onClick={() => setShowDateFilter(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Start Date
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                End Date
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={applyDateFilter}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Apply Filter
+            </button>
+            <button
+              onClick={clearDateFilter}
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+            >
+              Clear Filter
+            </button>
+          </div>
+          
+          {(startDate || endDate) && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Active Filter:</strong> 
+                {startDate && endDate 
+                  ? ` ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}`
+                  : startDate 
+                  ? ` From ${new Date(startDate).toLocaleDateString()}`
+                  : ` Until ${new Date(endDate).toLocaleDateString()}`
+                }
+                {` (${filteredLectures.length} lectures found)`}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
       {/* Faculty Info */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
@@ -228,6 +356,21 @@ const FacultyDetails: React.FC = () => {
 
         {/* Stats Grid */}
         <div className="p-6">
+          {(startDate || endDate) && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <h3 className="text-sm font-medium text-yellow-800 mb-2">Filtered Results</h3>
+              <p className="text-sm text-yellow-700">
+                Showing {filteredLectures.length} lectures out of {completedLectures.length} total lectures
+                {startDate && endDate 
+                  ? ` between ${new Date(startDate).toLocaleDateString()} and ${new Date(endDate).toLocaleDateString()}`
+                  : startDate 
+                  ? ` from ${new Date(startDate).toLocaleDateString()}`
+                  : ` until ${new Date(endDate).toLocaleDateString()}`
+                }
+              </p>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="flex items-center justify-center mb-2">
@@ -236,7 +379,14 @@ const FacultyDetails: React.FC = () => {
               <h3 className="text-2xl font-bold text-blue-600">
                 {stats.totalLectures}
               </h3>
-              <p className="text-sm text-gray-600">Total Lectures</p>
+              <p className="text-sm text-gray-600">
+                {(startDate || endDate) ? "Filtered" : "Total"} Lectures
+              </p>
+              {(startDate || endDate) && (
+                <p className="text-xs text-gray-500 mt-1">
+                  All time: {allTimeStats.totalLectures}
+                </p>
+              )}
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <div className="flex items-center justify-center mb-2">
@@ -246,6 +396,11 @@ const FacultyDetails: React.FC = () => {
                 {stats.uniqueTopics}
               </h3>
               <p className="text-sm text-gray-600">Topics Covered</p>
+              {(startDate || endDate) && (
+                <p className="text-xs text-gray-500 mt-1">
+                  All time: {allTimeStats.uniqueTopics}
+                </p>
+              )}
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <div className="flex items-center justify-center mb-2">
@@ -255,6 +410,11 @@ const FacultyDetails: React.FC = () => {
                 {stats.averageLecturesPerDay}
               </h3>
               <p className="text-sm text-gray-600">Avg/Day</p>
+              {(startDate || endDate) && (
+                <p className="text-xs text-gray-500 mt-1">
+                  All time: {allTimeStats.averageLecturesPerDay}
+                </p>
+              )}
             </div>
             <div className="text-center p-4 bg-yellow-50 rounded-lg">
               <div className="flex items-center justify-center mb-2">
@@ -264,6 +424,11 @@ const FacultyDetails: React.FC = () => {
                 {stats.activeDays}
               </h3>
               <p className="text-sm text-gray-600">Active Days</p>
+              {(startDate || endDate) && (
+                <p className="text-xs text-gray-500 mt-1">
+                  All time: {allTimeStats.activeDays}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -274,7 +439,7 @@ const FacultyDetails: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">
-              Most Recent Activity
+              {(startDate || endDate) ? "Most Recent Activity (Filtered)" : "Most Recent Activity"}
             </h2>
           </div>
           <div className="p-6">
@@ -304,8 +469,13 @@ const FacultyDetails: React.FC = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
-            Completed Lectures by Topic
+            {(startDate || endDate) ? "Filtered Lectures by Topic" : "Completed Lectures by Topic"}
           </h2>
+          {(startDate || endDate) && (
+            <p className="text-sm text-gray-600 mt-1">
+              Showing {filteredLectures.length} of {completedLectures.length} total lectures
+            </p>
+          )}
         </div>
         <div className="p-6">
           {sortedTopics.length > 0 ? (
@@ -320,6 +490,7 @@ const FacultyDetails: React.FC = () => {
                     <span className="text-sm text-gray-500">
                       {lectures.length} lecture
                       {lectures.length !== 1 ? "s" : ""}
+                      {(startDate || endDate) && " (filtered)"}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -363,11 +534,25 @@ const FacultyDetails: React.FC = () => {
             <div className="text-center py-8">
               <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No completed lectures found
+                {(startDate || endDate) 
+                  ? "No lectures found in the selected date range" 
+                  : "No completed lectures found"
+                }
               </h3>
               <p className="text-gray-600">
-                This faculty hasn't completed any lectures for this subject yet.
+                {(startDate || endDate) 
+                  ? "Try adjusting the date range to see more lectures." 
+                  : "This faculty hasn't completed any lectures for this subject yet."
+                }
               </p>
+              {(startDate || endDate) && completedLectures.length > 0 && (
+                <button
+                  onClick={clearDateFilter}
+                  className="mt-4 text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Clear filter to see all {completedLectures.length} lectures
+                </button>
+              )}
             </div>
           )}
         </div>
