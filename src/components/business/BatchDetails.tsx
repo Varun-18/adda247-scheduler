@@ -22,17 +22,9 @@ const BatchDetails: React.FC = () => {
 
     try {
       setLoading(true);
-      // Note: You'll need to implement getBatchById in your API service
-      // For now, we'll fetch all batches and find the specific one
-      const response = await apiService.getBatches();
+      const response = await apiService.getBatchById(batchId);
       if (response.success) {
-        const foundBatch = response.data.find(b => b._id === batchId);
-        if (foundBatch) {
-          setBatch(foundBatch);
-        } else {
-          showToast.error('Batch not found');
-          navigate('/batches');
-        }
+        setBatch(response.data);
       } else {
         showToast.error('Failed to load batch details');
         navigate('/batches');
@@ -211,7 +203,23 @@ const BatchDetails: React.FC = () => {
                       <h3 className="font-medium text-gray-900">
                         {index + 1}. {subject.title}
                       </h3>
-                      <p className="text-sm text-gray-600">Faculty ID: {subject.facultyId}</p>
+                      <div className="text-sm text-gray-600">
+                        <p className="font-medium">
+                          Faculty: {subject.facultyId.firstName} {subject.facultyId.lastName}
+                        </p>
+                        <p className="text-xs text-gray-500">{subject.facultyId.email}</p>
+                        {subject.facultyId.facultyProfile?.department && (
+                          <p className="text-xs text-gray-500">
+                            Department: {subject.facultyId.facultyProfile.department}
+                          </p>
+                        )}
+                        {subject.facultyId.facultyProfile?.specialization && 
+                         subject.facultyId.facultyProfile.specialization.length > 0 && (
+                          <p className="text-xs text-gray-500">
+                            Specialization: {subject.facultyId.facultyProfile.specialization.join(', ')}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-600">Total Lectures</p>
@@ -231,10 +239,19 @@ const BatchDetails: React.FC = () => {
                           <div className="space-y-1">
                             {topic.lectures.map((lecture, lectureIndex) => (
                               <div key={lecture._id} className="flex items-center space-x-2 text-xs">
-                                <CheckCircle className="w-3 h-3 text-green-600" />
+                                {lecture.completedAt ? (
+                                  <CheckCircle className="w-3 h-3 text-green-600" />
+                                ) : (
+                                  <Circle className="w-3 h-3 text-gray-400" />
+                                )}
                                 <span className="text-gray-700">
                                   {index + 1}.{topicIndex + 1}.{lectureIndex + 1} {lecture.title}
                                 </span>
+                                {lecture.completedAt && (
+                                  <span className="text-xs text-green-600 bg-green-100 px-1 py-0.5 rounded">
+                                    ✓
+                                  </span>
+                                )}
                               </div>
                             ))}
                           </div>

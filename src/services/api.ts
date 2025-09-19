@@ -360,7 +360,25 @@ export interface BatchSubject {
   _id: string;
   subjectId: string;
   title: string;
-  facultyId: string;
+  facultyId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    phoneNumber: string;
+    facultyProfile?: {
+      employeeId?: string;
+      department?: string;
+      specialization?: string[];
+      experience?: number;
+      qualification?: string;
+      joiningDate?: string;
+      isActive: boolean;
+    };
+    createdAt: string;
+    updatedAt: string;
+  };
   totalLectures: number;
   topics: BatchTopic[];
 }
@@ -378,6 +396,8 @@ export interface BatchLecture {
   lectureId: string;
   title: string;
   facultyId: string;
+  completedAt?: string;
+  completedBy?: string;
 }
 
 export interface CreateBatchPayload {
@@ -680,6 +700,10 @@ class ApiService {
     const endpoint = queryString ? `/batch/list?${queryString}` : "/batch/list";
 
     return this.request<Batch[]>(endpoint);
+  }
+
+  async getBatchById(batchId: string): Promise<ApiResponse<Batch>> {
+    return this.request<Batch>(`/batch/${batchId}`);
   }
 
   // Faculty APIs
